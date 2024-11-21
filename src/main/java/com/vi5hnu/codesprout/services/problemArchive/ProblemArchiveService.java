@@ -1,16 +1,13 @@
 package com.vi5hnu.codesprout.services.problemArchive;
 
 import com.vi5hnu.codesprout.commons.Pageable;
-import com.vi5hnu.codesprout.dto.CreateProblem;
+import com.vi5hnu.codesprout.models.dto.CreateProblem;
 import com.vi5hnu.codesprout.entity.ProblemArchive;
 import com.vi5hnu.codesprout.repository.ProblemArchiveRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +30,7 @@ public class ProblemArchiveService {
                 .language(problem.getLanguage())
                 .category(problem.getCategory())
                 .filePath(problem.getFilePath())
+                .platforms(problem.getPlatforms())
                 .build();
 
         return problemArchiveRepository.save(newProblem);

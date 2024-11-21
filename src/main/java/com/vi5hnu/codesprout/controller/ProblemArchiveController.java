@@ -1,6 +1,6 @@
 package com.vi5hnu.codesprout.controller;
 
-import com.vi5hnu.codesprout.dto.CreateProblem;
+import com.vi5hnu.codesprout.models.dto.CreateProblem;
 import com.vi5hnu.codesprout.services.problemArchive.ProblemArchiveService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
