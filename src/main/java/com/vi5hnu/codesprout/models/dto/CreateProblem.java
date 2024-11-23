@@ -36,5 +36,5 @@ public class CreateProblem {
     private String filePath;
 
     @NotNull(message = "problem platforms cannot be null")
-    private List<ProblemPlatform> platforms;
+    private String platforms;
 }

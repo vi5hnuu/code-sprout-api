@@ -1,6 +1,8 @@
 package com.vi5hnu.codesprout.services.problemArchive;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.vi5hnu.codesprout.commons.Pageable;
+import com.vi5hnu.codesprout.models.ProblemArchiveDto;
 import com.vi5hnu.codesprout.models.dto.CreateProblem;
 import com.vi5hnu.codesprout.entity.ProblemArchive;
 import com.vi5hnu.codesprout.repository.ProblemArchiveRepository;
@@ -16,10 +18,16 @@ public class ProblemArchiveService {
     private final ProblemArchiveRepository problemArchiveRepository;
 
     @Transactional(readOnly = true)
-    public Pageable<ProblemArchive> getProblems(int pageNo, int limit) {
+    public Pageable<ProblemArchiveDto> getProblems(int pageNo, int limit) {
         PageRequest pageable = PageRequest.of(pageNo - 1, limit); // Page index is 0-based in Spring Data
         final var page=problemArchiveRepository.findAll(pageable);
-        return new Pageable<>(page.get().toList(),pageNo,page.getTotalPages());
+        return new Pageable<>(page.get().map(problemArchive -> {
+            try {
+                return new ProblemArchiveDto(problemArchive);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }).toList(),pageNo,page.getTotalPages());
     }
 
     public ProblemArchive createProblem(CreateProblem problem) {

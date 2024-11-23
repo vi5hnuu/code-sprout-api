@@ -1,2 +1,2 @@
 ALTER TABLE problem_archive
-    ADD COLUMN platforms JSON DEFAULT "[]"
+    ADD COLUMN platforms MEDIUMBLOB DEFAULT NULL

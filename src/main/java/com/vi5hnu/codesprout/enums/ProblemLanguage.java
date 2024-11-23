@@ -6,7 +6,8 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public enum ProblemLanguage {
-    CPP("cpp");
+    CPP("CPP"),
+    SQL("SQL");
     private final String value;
 
     @JsonValue
@@ -16,11 +17,6 @@ public enum ProblemLanguage {
 
     @JsonCreator
     public static ProblemLanguage fromValue(String value) {
-        for (ProblemLanguage language : ProblemLanguage.values()) {
-            if (language.value.equalsIgnoreCase(value)) { // Case insensitive check
-                return language;
-            }
-        }
-        throw new IllegalArgumentException("Unknown enum value: " + value);
+        return ProblemLanguage.valueOf(ProblemLanguage.class, value.toUpperCase());
     }
 }
