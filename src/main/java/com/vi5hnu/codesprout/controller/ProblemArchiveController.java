@@ -1,5 +1,7 @@
 package com.vi5hnu.codesprout.controller;
 
+import com.vi5hnu.codesprout.enums.ProblemCategory;
+import com.vi5hnu.codesprout.enums.ProblemLanguage;
 import com.vi5hnu.codesprout.models.dto.CreateProblem;
 import com.vi5hnu.codesprout.services.problemArchive.ProblemArchiveService;
 import jakarta.validation.Valid;
@@ -21,8 +23,12 @@ public class ProblemArchiveController {
 //    }
 //
     @GetMapping(path = "all/info")
-    ResponseEntity<Map<String,Object>> getProblemsInfo(@RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo, @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.getProblems(pageNo,pageSize)));
+    ResponseEntity<Map<String,Object>> getProblemsInfo(
+            @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
+            @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize,
+            @RequestParam(name = "language",required = false) ProblemLanguage problemType,
+            @RequestParam(name = "difficultyLevel",required = false) ProblemCategory category) {
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.getProblems(pageNo,pageSize,problemType,category)));
     }
 
     @PostMapping(path = "new")

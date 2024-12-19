@@ -2,12 +2,17 @@ package com.vi5hnu.codesprout.services.problemArchive;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.vi5hnu.codesprout.commons.Pageable;
+import com.vi5hnu.codesprout.enums.ProblemCategory;
+import com.vi5hnu.codesprout.enums.ProblemLanguage;
 import com.vi5hnu.codesprout.models.ProblemArchiveDto;
 import com.vi5hnu.codesprout.models.dto.CreateProblem;
 import com.vi5hnu.codesprout.entity.ProblemArchive;
 import com.vi5hnu.codesprout.repository.ProblemArchiveRepository;
+import com.vi5hnu.codesprout.specifications.ProblemArchiveSpecification;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Filter;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +23,11 @@ public class ProblemArchiveService {
     private final ProblemArchiveRepository problemArchiveRepository;
 
     @Transactional(readOnly = true)
-    public Pageable<ProblemArchiveDto> getProblems(int pageNo, int limit) {
+    public Pageable<ProblemArchiveDto> getProblems(int pageNo, int limit, ProblemLanguage language, ProblemCategory category) {
         PageRequest pageable = PageRequest.of(pageNo - 1, limit); // Page index is 0-based in Spring Data
-        final var page=problemArchiveRepository.findAll(pageable);
+        Specification<ProblemArchive> langSpec = ProblemArchiveSpecification.hasLanguage(language)
+                .and(ProblemArchiveSpecification.hasCategory(category));
+        final var page=problemArchiveRepository.findAll(langSpec,pageable);
         return new Pageable<>(page.get().map(problemArchive -> {
             try {
                 return new ProblemArchiveDto(problemArchive);
@@ -43,4 +50,5 @@ public class ProblemArchiveService {
 
         return problemArchiveRepository.save(newProblem);
     }
+
 }
