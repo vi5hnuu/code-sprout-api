@@ -58,6 +58,16 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!--	aws 	-->
+		<!-- https://mvnrepository.com/artifact/io.awspring.cloud/spring-cloud-aws-dependencies -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.20.48</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>

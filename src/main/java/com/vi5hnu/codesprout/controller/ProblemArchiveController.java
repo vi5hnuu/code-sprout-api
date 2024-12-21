@@ -2,13 +2,16 @@ package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.enums.ProblemCategory;
 import com.vi5hnu.codesprout.enums.ProblemLanguage;
-import com.vi5hnu.codesprout.models.dto.CreateProblem;
+import com.vi5hnu.codesprout.models.dto.ProblemInfo;
 import com.vi5hnu.codesprout.services.problemArchive.ProblemArchiveService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Map;
 
 @RestController
@@ -31,9 +34,15 @@ public class ProblemArchiveController {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.getProblems(pageNo,pageSize,problemType,category)));
     }
 
-    @PostMapping(path = "new")
-    ResponseEntity<Map<String,Object>> createProblem(@Valid  @RequestBody(required = true) CreateProblem problem) {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.createProblem(problem)));
+    @PostMapping(path = "new",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    ResponseEntity<Map<String,Object>> createProblem(@Valid  @RequestPart("problemInfo") ProblemInfo problem,@RequestPart("file") MultipartFile file) {
+        try{
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.createProblem(problem,file)));
+        }catch (IOException e){
+            return ResponseEntity.status(400).body(Map.of("success",false,"message","Failed to upload file"));
+        }catch (Exception e){
+            return ResponseEntity.status(400).body(Map.of("success",false,"message","Something went wrong"));
+        }
     }
 //
 //    @GetMapping(path = "id/{kathaId}")
