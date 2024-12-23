@@ -1,17 +1,15 @@
 package com.vi5hnu.codesprout.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vi5hnu.codesprout.enums.ProblemCategory;
+import com.vi5hnu.codesprout.enums.ProblemDifficulty;
 import com.vi5hnu.codesprout.enums.ProblemLanguage;
 import com.vi5hnu.codesprout.models.ProblemPlatform;
 import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.core.type.TypeReference;
-import java.util.Collections;
+
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -36,7 +34,7 @@ public class ProblemArchive {
 
     @Enumerated(EnumType.STRING) // Ensures the enum is stored as a string in the DB
     @Column(nullable = false)
-    private ProblemCategory category;
+    private ProblemDifficulty difficulty;
     private String platforms;
 
     @Column(name = "file_path",nullable = false)

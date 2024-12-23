@@ -1,7 +1,7 @@
 package com.vi5hnu.codesprout.specifications;
 
 import com.vi5hnu.codesprout.entity.ProblemArchive;
-import com.vi5hnu.codesprout.enums.ProblemCategory;
+import com.vi5hnu.codesprout.enums.ProblemDifficulty;
 import com.vi5hnu.codesprout.enums.ProblemLanguage;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -18,12 +18,12 @@ public class ProblemArchiveSpecification {
         };
     }
 
-    public static Specification<ProblemArchive> hasCategory(ProblemCategory category) {
+    public static Specification<ProblemArchive> hasDifficulty(ProblemDifficulty difficulty) {
         return (Root<ProblemArchive> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) -> {
-            if (category == null) {
+            if (difficulty == null) {
                 return criteriaBuilder.conjunction(); // No filter if language is null
             }
-            return criteriaBuilder.equal(root.get("category"), category);
+            return criteriaBuilder.equal(root.get("difficulty"), difficulty);
         };
     }
 }

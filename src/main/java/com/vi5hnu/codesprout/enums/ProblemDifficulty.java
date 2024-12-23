@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 
 
 @AllArgsConstructor
-public enum ProblemCategory {
+public enum ProblemDifficulty {
     EASY("EASY"),
     MEDIUM("MEDIUM"),
     HARD("HARD");
@@ -20,7 +20,7 @@ public enum ProblemCategory {
     }
 
     @JsonCreator
-    public static ProblemCategory fromValue(String value) {
-        return ProblemCategory.valueOf(ProblemCategory.class, value.toUpperCase());
+    public static ProblemDifficulty fromValue(String value) {
+        return ProblemDifficulty.valueOf(ProblemDifficulty.class, value.toUpperCase());
     }
 }
