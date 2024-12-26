@@ -7,7 +7,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public enum ProblemLanguage {
     CPP("CPP"),
-    SQL("SQL");
+    SQL("SQL"),
+    JAVASCRIPT("JAVASCRIPT");
     private final String value;
 
     @JsonValue

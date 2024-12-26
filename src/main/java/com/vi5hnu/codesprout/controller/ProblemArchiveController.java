@@ -2,7 +2,9 @@ package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.enums.ProblemDifficulty;
 import com.vi5hnu.codesprout.enums.ProblemLanguage;
+import com.vi5hnu.codesprout.models.dto.CreateProblemTagDto;
 import com.vi5hnu.codesprout.models.dto.ProblemInfo;
+import com.vi5hnu.codesprout.models.dto.ProblemInfoWithPath;
 import com.vi5hnu.codesprout.services.problemArchive.ProblemArchiveService;
 import jakarta.validation.Valid;
 import jakarta.websocket.server.PathParam;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -51,15 +54,53 @@ public class ProblemArchiveController {
     }
 
     @PostMapping(path = "problem/new",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    ResponseEntity<Map<String,Object>> createProblem(@Valid  @RequestPart("problemInfo") ProblemInfo problem,@RequestPart("file") MultipartFile file) {
+    ResponseEntity<Map<String,Object>> createProblem(@Valid  @RequestPart("problemInfo") ProblemInfo problem,@RequestPart(value = "file",required = false) MultipartFile file,@RequestPart(value = "file_path",required = false) String filePath) {
         try{
-            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.createProblem(problem,file)));
+            if((file==null && filePath==null) || (file!=null && filePath!=null)) throw new Exception("either file or file-path is required");
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.createProblem(problem,file,filePath)));
         }catch (IOException e){
             return ResponseEntity.status(400).body(Map.of("success",false,"message","Failed to upload file"));
         }catch (Exception e){
             return ResponseEntity.status(400).body(Map.of("success",false,"message","Something went wrong"));
         }
     }
+
+    @PostMapping(path = "create/tag",consumes = {MediaType.APPLICATION_JSON_VALUE})
+    ResponseEntity<Map<String,Object>> createTag(@Valid  @RequestBody() CreateProblemTagDto tagInfo) {
+        try{
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.createProblemTag(tagInfo)));
+        }catch (Exception e){
+            return ResponseEntity.status(400).body(Map.of("success",false,"message","Something went wrong"));
+        }
+    }
+
+    @PostMapping(path = "add-to/tag/{tagId}/problem/{problemId}")
+    ResponseEntity<Map<String,Object>> addProblemToTag(@PathVariable("tagId") String tagId,@PathVariable("problemId") String problemId) {
+        try{
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.addProblemToTag(tagId,problemId)));
+        }catch (Exception e){
+            return ResponseEntity.status(400).body(Map.of("success",false,"message","Something went wrong"));
+        }
+    }
+
+    @PostMapping(path = "problem/bulk/new",consumes = {MediaType.APPLICATION_JSON_VALUE})
+    ResponseEntity<Map<String,Object>> createBulkProblem(@Valid  @RequestBody() List<ProblemInfoWithPath> problems) {
+        try{
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.createProblems(problems)));
+        }catch (Exception e){
+            return ResponseEntity.status(400).body(Map.of("success",false,"message","Something went wrong"));
+        }
+    }
+
+    @PostMapping(path = "add-to/tag/{tagId}",consumes = {MediaType.APPLICATION_JSON_VALUE})
+    ResponseEntity<Map<String,Object>> addAllProblemToTag(@PathVariable("tagId") String tagId,@RequestBody() List<String> problemIds) {
+        try{
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.addAllProblemsToTag(tagId,problemIds)));
+        }catch (Exception e){
+            return ResponseEntity.status(400).body(Map.of("success",false,"message","Something went wrong"));
+        }
+    }
+
 //
 //    @GetMapping(path = "problem/id/{kathaId}")
 //    ResponseEntity<Map<String,Object>> getVratKathaById(@PathVariable(name = "kathaId") String kathaId) throws ApiException {
