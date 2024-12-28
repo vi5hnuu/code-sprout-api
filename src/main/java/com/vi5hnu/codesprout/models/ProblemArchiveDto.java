@@ -24,14 +24,5 @@ public class ProblemArchiveDto {
     private ProblemLanguage language;
     private ProblemDifficulty difficulty;
     private List<ProblemPlatform> platforms;
-
-    public ProblemArchiveDto(ProblemArchive problemArchive) throws JsonProcessingException {
-        setId(problemArchive.getId());
-        setTitle(problemArchive.getTitle());
-        setDescription(problemArchive.getDescription());
-        setLanguage(problemArchive.getLanguage());
-        setDifficulty(problemArchive.getDifficulty());
-        setPlatforms(problemArchive.getPlatforms());
-        setFilePath(problemArchive.getFilePath());
-    }
+    private List<ProblemImage> problemImages;
 }

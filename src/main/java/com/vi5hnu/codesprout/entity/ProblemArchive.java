@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,9 +41,12 @@ public class ProblemArchive {
     @Column(name = "file_path",nullable = false)
     private String filePath;
 
+    private String problemImages;
+
     @PrePersist
     public void assignId() {
         if(platforms==null) platforms = "[]";
+        if(problemImages==null) problemImages = "[]";
         if (this.id == null) this.id = (PREFIX + UUID.randomUUID().toString().replace("_","")).substring(0,32);
     }
 

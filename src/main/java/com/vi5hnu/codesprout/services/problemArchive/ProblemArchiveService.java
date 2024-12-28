@@ -1,12 +1,15 @@
 package com.vi5hnu.codesprout.services.problemArchive;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vi5hnu.codesprout.commons.Pageable;
 import com.vi5hnu.codesprout.entity.ProblemTag;
 import com.vi5hnu.codesprout.entity.ProblemTagAssociation;
 import com.vi5hnu.codesprout.enums.ProblemDifficulty;
 import com.vi5hnu.codesprout.enums.ProblemLanguage;
 import com.vi5hnu.codesprout.models.ProblemArchiveDto;
+import com.vi5hnu.codesprout.models.ProblemImage;
 import com.vi5hnu.codesprout.models.ProblemTagAssociationDto;
 import com.vi5hnu.codesprout.models.ProblemTagDto;
 import com.vi5hnu.codesprout.models.dto.CreateProblemTagDto;
@@ -27,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -38,6 +42,7 @@ public class ProblemArchiveService {
     private final ProblemTagRepository problemTagRepository;
     private final ProblemTagAssociationRepository problemTagAssociationRepository;
     private final S3StorageService s3StorageService;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public Pageable<ProblemArchiveDto> getProblems(int pageNo, int limit, ProblemLanguage language, ProblemDifficulty difficulty) {
@@ -47,7 +52,7 @@ public class ProblemArchiveService {
         final var page=problemArchiveRepository.findAll(langSpec,pageable);
         return new Pageable<>(page.get().map(problemArchive -> {
             try {
-                return new ProblemArchiveDto(problemArchive);
+                return fromProblemArchive(problemArchive);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -71,6 +76,7 @@ public class ProblemArchiveService {
                 .difficulty(problem.getDifficulty())
                 .filePath(filePath)
                 .platforms(problem.getPlatforms())
+                .problemImages(objectMapper.writeValueAsString(problem.getProblemImages()))
                 .build();
         return problemArchiveRepository.save(newProblem);
     }
@@ -92,7 +98,7 @@ public class ProblemArchiveService {
 
         return new Pageable<>(problems.stream().map((problem)-> {
             try {
-                return new ProblemArchiveDto(problem);
+                return fromProblemArchive(problem);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -122,7 +128,7 @@ public class ProblemArchiveService {
         return new ProblemTagAssociationDto(savedAssociation);
     }
 
-    public List<ProblemArchiveDto> createProblems(List<ProblemInfoWithPath> problems) {
+    public List<ProblemArchiveDto> createProblems(List<ProblemInfoWithPath> problems) throws JsonProcessingException {
         final List<ProblemArchive> problemArchives=new ArrayList<>();
         for(final ProblemInfoWithPath problemInfoWithPath : problems){
             final var arcive=ProblemArchive.builder()
@@ -132,17 +138,32 @@ public class ProblemArchiveService {
                             .difficulty(problemInfoWithPath.getDifficulty())
                             .filePath(problemInfoWithPath.getFilePath())
                             .platforms(problemInfoWithPath.getPlatforms())
+                            .problemImages(objectMapper.writeValueAsString(problemInfoWithPath.getProblemImages()))
                             .build();
             problemArchives.add(arcive);
         }
         final var savedArchives=problemArchiveRepository.saveAll(problemArchives);
         return savedArchives.stream().map((savedArchive)-> {
             try {
-                return new ProblemArchiveDto(savedArchive);
+                return fromProblemArchive(savedArchive);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
         }).toList();
+    }
+
+    private ProblemArchiveDto fromProblemArchive(ProblemArchive problemArchive) throws JsonProcessingException {
+        final var problemImages=objectMapper.readValue(problemArchive.getProblemImages(),new TypeReference<List<ProblemImage>>() {});
+        return ProblemArchiveDto.builder()
+                .id(problemArchive.getId())
+                .title(problemArchive.getTitle())
+                .description(problemArchive.getDescription())
+                .language(problemArchive.getLanguage())
+                .difficulty(problemArchive.getDifficulty())
+                .platforms(problemArchive.getPlatforms())
+                .filePath(problemArchive.getFilePath())
+                .problemImages(problemImages==null ? Collections.emptyList() : problemImages)
+                .build();
     }
 
     @Transactional
