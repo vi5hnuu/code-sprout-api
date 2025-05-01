@@ -19,6 +19,7 @@ import com.vi5hnu.codesprout.models.dto.ProblemInfoWithPath;
 import com.vi5hnu.codesprout.repository.ProblemArchiveRepository;
 import com.vi5hnu.codesprout.repository.ProblemTagAssociationRepository;
 import com.vi5hnu.codesprout.repository.ProblemTagRepository;
+import com.vi5hnu.codesprout.services.S3StorageService;
 import com.vi5hnu.codesprout.specifications.ProblemArchiveSpecification;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -61,7 +62,7 @@ public class ProblemArchiveService {
 
     public ProblemArchive createProblem(ProblemInfo problem, MultipartFile file,String filePath) throws Exception {
         if(file!=null){
-            final var por=s3StorageService.uploadFile(file);
+            final var por=s3StorageService.uploadFile(file,file.getOriginalFilename());
             if(!por.sdkHttpResponse().isSuccessful()) throw new Exception("Failed to upload file");
             filePath = s3StorageService.uploadedFilePath(file.getOriginalFilename());; // Construct the file's URL
         }

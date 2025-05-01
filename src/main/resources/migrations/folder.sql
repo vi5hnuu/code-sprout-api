@@ -19,11 +19,8 @@ CREATE TABLE file (
     owner_id VARCHAR(32) NOT NULL,
     folder_id VARCHAR(32) DEFAULT NULL,
     name VARCHAR(255) NOT NULL,
-    file_extension VARCHAR(20) NOT NULL,
-    mime_type VARCHAR(50) CHECK (
-                             (file_extension = 'txt' AND mime_type = 'text/plain') OR
-                             (file_extension = 'md' AND mime_type = 'text/markdown')
-                         ) NOT NULL,
+    file_extension VARCHAR(20) CHECK(file_extension in ('txt','md')) NOT NULL,
+    mime_type VARCHAR(50) CHECK(mime_type in ('text/plain','text/markdown')) NOT NULL,
     s3_key VARCHAR(1024) NOT NULL,
     file_size BIGINT UNSIGNED NOT NULL, --size in bytes
     visibility ENUM('public', 'private') DEFAULT 'private',

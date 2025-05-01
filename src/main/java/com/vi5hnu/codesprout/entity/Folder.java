@@ -39,6 +39,7 @@ public class Folder {
     private String parentId;
 
     @Column(name = "is_deleted")
+    @Builder.Default
     private boolean isDeleted = false;
 
     @Column(length = 255)

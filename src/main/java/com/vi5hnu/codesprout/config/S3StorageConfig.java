@@ -1,29 +1,36 @@
 package com.vi5hnu.codesprout.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.core.internal.http.AmazonSyncHttpClient;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.regions.Region;
 
 @Configuration
+@RequiredArgsConstructor
 public class S3StorageConfig {
-    @Value("${cloud.aws.credentials.access-key}")
-    private String accessKey;
-    @Value("${cloud.aws.credentials.secret-key}")
-    private String secretKey;
-    @Value("${cloud.aws.region.static}")
-    private String region;
+    private final AwsS3Properties properties;
 
-    @Bean
-    S3Client s3StorageClint() {
-        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
+    @Bean(name = "primaryS3Client")
+    public S3Client primaryS3Client() {
+        return createS3Client(properties.getPrimary());
+    }
 
+    @Bean(name = "secondaryS3Client")
+    public S3Client secondaryS3Client() {
+        return createS3Client(properties.getSecondary());
+    }
+
+    // Reusable method to create S3Client with given credentials
+    private S3Client createS3Client(AwsS3Properties.AwsCredentials credentials) {
+        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(credentials.getAccessKey(), credentials.getSecretKey());
         return S3Client.builder()
-                .region(Region.of(region)) // Use your region
+                .region(Region.of(credentials.getRegion()))
                 .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .build();
     }
