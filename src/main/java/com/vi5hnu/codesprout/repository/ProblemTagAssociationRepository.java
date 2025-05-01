@@ -14,4 +14,5 @@ import java.util.Optional;
 @Repository
 public interface ProblemTagAssociationRepository extends JpaRepository<ProblemTagAssociation, String>{
     Page<ProblemTagAssociation> findAllByTagId(String tagId, PageRequest pageRequest);
+    Page<ProblemTagAssociation> findAllByTagIdIn(List<String> tagId, PageRequest pageRequest);
 }

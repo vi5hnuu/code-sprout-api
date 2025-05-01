@@ -53,6 +53,14 @@ public class ProblemArchiveController {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.getTagProblems(tagId,pageNo,pageSize)));
     }
 
+    @GetMapping(path = "tag/problems")
+    ResponseEntity<Map<String,Object>> getTagsProblems(
+            @PathVariable(name = "tags",required = true) List<String> tags,
+            @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
+            @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) {
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.problemArchiveService.getTagsProblems(tags,pageNo,pageSize)));
+    }
+
     @PostMapping(path = "problem/new",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     ResponseEntity<Map<String,Object>> createProblem(@Valid  @RequestPart("problemInfo") ProblemInfo problem,@RequestPart(value = "file",required = false) MultipartFile file,@RequestPart(value = "file_path",required = false) String filePath) {
         try{

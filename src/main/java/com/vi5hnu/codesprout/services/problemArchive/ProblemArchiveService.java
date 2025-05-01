@@ -105,6 +105,22 @@ public class ProblemArchiveService {
         }).toList(),pageNo,page.getTotalPages());
     }
 
+    public Pageable<ProblemArchiveDto> getTagsProblems(List<String> tags, int pageNo, int pageSize) {
+        if(tags==null || tags.isEmpty()) return Pageable.emptyPage();
+        PageRequest pageable = PageRequest.of(pageNo - 1, pageSize); // Page index is 0-based in Spring Data
+        final var page=problemTagAssociationRepository.findAllByTagIdIn(tags,pageable);
+        final var problemIds=page.stream().map(ProblemTagAssociation::getProblemId).toList();
+        final var problems=problemArchiveRepository.findAllById(problemIds);
+
+        return new Pageable<>(problems.stream().map((problem)-> {
+            try {
+                return fromProblemArchive(problem);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }).toList(),pageNo,page.getTotalPages());
+    }
+
     public ProblemTagDto createProblemTag(CreateProblemTagDto tagInfo) {
         final var problemTag=ProblemTag.builder()
                 .title(tagInfo.getTitle())

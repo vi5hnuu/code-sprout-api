@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Collections;
 import java.util.List;
 
 @NoArgsConstructor
@@ -19,5 +20,13 @@ public class Pageable<T> {
         this.data=data;
         this.pageNo=pageNo;
         this.totalPages=totalPages;
+    }
+
+    static public  <T> Pageable<T> emptyPage() {
+        return Pageable.<T>builder()
+                .data(Collections.emptyList())
+                .pageNo(1)
+                .totalPages(0)
+                .build();
     }
 }
