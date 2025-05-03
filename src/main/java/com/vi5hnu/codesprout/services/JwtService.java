@@ -44,6 +44,14 @@ public class JwtService {
                 .getBody();
     }
 
+    public Claims getClaims(String token,String jwtSecret){
+        return Jwts.parserBuilder()
+                .setSigningKey(key(jwtSecret))
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
     public Key key(String secret){
         final byte[] decodedSecret= Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(decodedSecret);

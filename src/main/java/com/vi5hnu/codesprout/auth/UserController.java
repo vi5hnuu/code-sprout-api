@@ -31,7 +31,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,35 +59,11 @@ public class UserController {
     private final GoogleService googleService;
     private final JwtService jwtService;
 
-    @GetMapping(path = "all")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> getUsers(@RequestParam(name = "pageNo",defaultValue = "1") int pageNo,@RequestParam(name = "count",defaultValue = "10") int count) throws ApiException {
-        final Pageable<UserDto> userPageDto = userService.findAllUsers(pageNo, count);
-        return ResponseEntity.ok(Map.of("success",true,"data",userPageDto));
-    }
-
-    @GetMapping(path = "{userId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> getUser(@PathVariable(name = "userId",required = true) String userId) throws ApiException {
-        final var user = userService.getActiveUser(userId);
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",user));
-    }
-
     @GetMapping(path = "me")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
     public ResponseEntity<Map<String,Object>> getMe(Principal principal) throws ApiException {
         final var user = userService.getActiveUser(principal.getName());
         return ResponseEntity.status(200).body(Map.of("success",true,"data",user));
-    }
-
-    @DeleteMapping(path = "{userId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> deleteUser(@PathVariable(name = "userId",required = true) String userId) throws ApiException, IOException {
-        final var user = userService.deleteUserById(userId);
-        return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("user %s deleted successfully.",user.getUsername())));
     }
 
     @DeleteMapping(path = "")
@@ -98,17 +73,9 @@ public class UserController {
         return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("user %s deleted successfully.",user.getUsername())));
     }
 
-    @PatchMapping(path = "add-role")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> addRole(@RequestBody @Valid RoleDto roleDto) throws ApiException {
-        UserModel userModel = userService.updateRole(roleDto.getUserId(),roleDto.getRole());
-        return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("role added for user %s", userModel.getUsername()),"data", UserModel.toDto(userModel)));
-    }
-
     @PostMapping(path = "password/init")
-    public ResponseEntity<Map<String,Object>> updatePasswordInit(@RequestBody @Valid UpdatePasswordInit updatePasswordInit, HttpServletResponse httpResponse, Principal principal) throws ApiException {
-        final var user=userRepository.findOne(UserSpecifications.activeUserByUsernameOrEmail(updatePasswordInit.getUsernameEmail(),null,null,false)).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"User not found"));
+    public ResponseEntity<Map<String,Object>> updatePasswordInit(HttpServletResponse httpResponse, Principal principal) throws ApiException {
+        final var user=userRepository.findOne(UserSpecifications.activeUserById(principal.getName(),null,null,false)).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"User not found"));
         if(user.isLocked()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account suspended");
         else if(!user.isEnabled()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account not verified");
 
@@ -125,6 +92,7 @@ public class UserController {
                 .otp(otp)
                 .build();
         final OtpModel savedOtp = otpRepository.save(otpModel);
+
         //send email
         publisher.publishEvent(new PasswordUpdateInit(UserModel.toDto(user),otp));
 
@@ -136,7 +104,7 @@ public class UserController {
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
     public ResponseEntity<Map<String,Object>> updatePasswordComplete(@RequestBody @Valid UpdatePasswordDto updatePasswordDto, HttpServletResponse httpResponse, Principal principal) throws ApiException {
         final List<OtpModel> latestUnUsedActiveOtps=otpRepository.findAll(OtpSpecifications.getLatestActiveOtps(principal.getName(), OtpReason.PASSWORD_UPDATE,OtpStatus.UN_USED));
-        if(latestUnUsedActiveOtps.isEmpty() || !latestUnUsedActiveOtps.get(0).getOtp().equals(updatePasswordDto.getOtp())) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid otp");
+        if(latestUnUsedActiveOtps.isEmpty() || !latestUnUsedActiveOtps.getFirst().getOtp().equals(updatePasswordDto.getOtp())) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid otp");
 
         //update password
         UserModel userModel = userService.updatePasswordById(principal.getName(),updatePasswordDto.getOldPassword(),updatePasswordDto.getNewPassword(),updatePasswordDto.getConfirmPassword());
@@ -154,6 +122,7 @@ public class UserController {
 
         //security alert
         publisher.publishEvent(new PasswordUpdateComplete(userModel));
+
         return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("password update for user %s successful.",userModel.getUsername())));
     }
 
@@ -315,7 +284,9 @@ public class UserController {
 
         //send email
         final String verificationUrl= httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":" + httpServletRequest.getServerPort() + "/api/v1/users/verify";
+
         publisher.publishEvent(new RegistrationVerificationEvent(userModel,token,verificationUrl));
+
         return ResponseEntity.ok(Map.of("success",true,"message","Email Sent!"));
     }
 
@@ -344,10 +315,10 @@ public class UserController {
         final var claims=jwtService.getClaims(token,jwtSecret);
         final var user=userRepository.findOne(UserSpecifications.activeUserById(claims.getSubject(),null,null,false)).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"User not found"));
 
-        //this should never pass...as token will be created for enabled account only
+        //this should never pass...as token will be created for enabled account only [but may be user was blocked later]
         if(user.isLocked()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account Suspended");
         else if(!user.isEnabled()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account not verified");
-        return ResponseEntity.ok("Verification success!");
+        return ResponseEntity.ok("User is verified");
     }
 
     @PostMapping(path = "forgot-password")
@@ -370,6 +341,7 @@ public class UserController {
 
         //send otp email
         publisher.publishEvent(new OtpEvent(userModel.getId(),userModel.getFirstName(),userModel.getEmail(),otp));
+
         return ResponseEntity.status(200).body(Map.of("success",true,"message","please enter the otp sent via mail!"));
     }
 
@@ -398,6 +370,7 @@ public class UserController {
 
         //send alert email
         publisher.publishEvent(new AlertEvent(user.getFirstName(), user.getEmail(), "you password has been changed successfully..."));
+
         return ResponseEntity.status(200).body(Map.of("success",true,"message","password changed successfully..."));//give option if the owner doesnt changed his password
     }
 }
