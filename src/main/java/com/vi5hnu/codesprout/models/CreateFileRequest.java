@@ -21,7 +21,5 @@ public class CreateFileRequest {
 
     //this name will override file name in s3 bucket and hence the key
     private String name;//can be null in that case file name is used
-
-    @NotNull
     private Visibility visibility = Visibility.PRIVATE;
 }

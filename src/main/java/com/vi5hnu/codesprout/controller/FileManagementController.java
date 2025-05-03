@@ -30,9 +30,10 @@ public class FileManagementController {
     @GetMapping(path = "folders")
     ResponseEntity<Map<String,Object>> getFolders(
             Principal principal,
+            @RequestParam(name = "parentId",required = false) String parentId,
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
             @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolders(principal.getName(),pageNo,pageSize)));
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolders(principal.getName(),parentId,pageNo,pageSize)));
     }
 
     @GetMapping(path = "folders/{folderId}")
@@ -49,49 +50,30 @@ public class FileManagementController {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolderByName(principal.getName(),folderName)));
     }
 
-    @GetMapping(path = "files/folder/{folderId}/")
+    @GetMapping(path = "files")
     ResponseEntity<Map<String,Object>> getFiles(
             Principal principal,
-            @PathVariable(name = "folderName") String folderId,
+            @RequestParam(name = "folderId",required = false) String folderId,
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
             @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws Exception {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(principal.getName(),folderId,pageNo,pageSize)));
     }
 
-    @GetMapping(path = "folder/{folderId}/file/{fileId}")
-    ResponseEntity<Map<String,Object>> getFileById(
-            Principal principal,
-            @PathVariable(name = "folderId") String folderId,
-            @PathVariable(name = "fileId") String fileId) throws Exception {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileById(principal.getName(),folderId,fileId)));
-    }
-
-    @GetMapping(path = "folder/{folderId}/file/{fileName}")
-    ResponseEntity<Map<String,Object>> getFileByName(
-            Principal principal,
-            @PathVariable(name = "folderName") String folderId,
-            @PathVariable(name = "fileName") String fileName) throws Exception {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileByName(principal.getName(),folderId,fileName)));
-    }
-
     @GetMapping(path = "file/{fileId}")
     ResponseEntity<Map<String,Object>> getFileById(
             Principal principal,
-            @PathVariable(name = "fileId") String fileId) {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileById(principal.getName(),fileId)));
+            @RequestParam(name = "folderId",required = false) String folderId,
+            @PathVariable(name = "fileId") String fileId) throws Exception {
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileById(principal.getName(),folderId,fileId)));
     }
 
     @GetMapping(path = "file/{fileName}")
     ResponseEntity<Map<String,Object>> getFileByName(
             Principal principal,
-            @PathVariable(name = "fileName") String fileName) {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileByName(principal.getName(),fileName)));
+            @RequestParam(name = "folderId",required = false) String folderId,
+            @PathVariable(name = "fileName") String fileName) throws Exception {
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileByName(principal.getName(),folderId,fileName)));
     }
-
-
-//        public FolderDto createFolder(String ownerId, CreateFolderRequest createFolderRequest) throws Exception {
-//        public FileDto createFile(String ownerId, CreateFileRequest createFileRequest,MultipartFile file) throws Exception {
-
 
     @PostMapping(path = "create-folder")
     ResponseEntity<Map<String,Object>> createFolder(Principal principal,@Valid  @RequestBody CreateFolderRequest folderRequest) throws Exception {

@@ -1,4 +1,4 @@
-package com.vi5hnu.codesprout.config;
+package com.vi5hnu.codesprout.configuration;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;

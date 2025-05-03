@@ -9,6 +9,8 @@ import com.vi5hnu.codesprout.models.dto.*;
 import com.vi5hnu.codesprout.repository.*;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.apache.tika.Tika;
+import org.apache.tika.metadata.Metadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +18,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.file.Files;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -25,11 +30,12 @@ public class FileManagementService {
     private final FolderRepository folderRepository;
     private final FileRepository fileRepository;
     private final S3StorageService s3StorageService;
+    private final UtilityService utilityService;
 
     @Transactional(readOnly = true)
-    public Pageable<FolderDto> getFolders(String ownerId,@Min(1) int pageNo, @Min(10) int limit) {
+    public Pageable<FolderDto> getFolders(String ownerId,String parentId,@Min(1) int pageNo, @Min(10) int limit) {
         PageRequest pageable = PageRequest.of(pageNo - 1, limit,Sort.by("name").ascending()); // Page index is 0-based in Spring Data
-        final var folders=folderRepository.findAllByOwnerId(ownerId,pageable);
+        final var folders=folderRepository.findAllByOwnerIdAndParentId(ownerId,parentId,pageable);
         return new Pageable<>(folders.get().map(this::folderToDto).toList(),pageNo,folders.getTotalPages());
     }
 
@@ -106,25 +112,42 @@ public class FileManagementService {
                 .parentId(createFolderRequest.getParentId())
                 .password(createFolderRequest.getPassword())
                 .build();
-        final var savedFolder=folderRepository.save(newFolder);
+        final var savedFolder=folderRepository.saveAndFlush(newFolder);
         return folderToDto(savedFolder);
     }
 
     @Transactional(readOnly = false)
-    public FileDto createFile(String ownerId, CreateFileRequest createFileRequest,MultipartFile file) throws Exception {
-        final var key=createFileRequest.getName()!=null ? createFileRequest.getName() : file.getOriginalFilename();
+    public FileDto createFile(String ownerId, CreateFileRequest createFileRequest,MultipartFile multipartFile) throws Exception {
+        final var originalFileName=multipartFile.getOriginalFilename();
+        if(originalFileName==null) throw new Exception("Invalid file name");
+        final var extension= FileExtension.fromValue(extractExtension(originalFileName));
+        final var key=createFileRequest.getName()!=null ? createFileRequest.getName()+"."+extension.getValue() : multipartFile.getOriginalFilename();
         if(key==null) throw new Exception("Invalid file name");
-        final var extension= FileExtension.valueOf(extractExtension(key));
-        if(!Constants.allowedExtensions.contains(extension)) throw new Exception("file type not supported");
-        final var fileExists=fileRepository.existsByOwnerIdAndFolderIdAndName(ownerId,createFileRequest.getFolderId(),key);
-        if(!fileExists) throw new Exception("file with same name cannot be created.");
 
-        final var uploadedFile=s3StorageService.uploadFile(file,key);
+        final var extensionMapping=Constants.allowedExtensions.get(extension.getValue());
+        if(extensionMapping==null) throw new Exception("file type not supported");
+        final var fileExists=fileRepository.existsByOwnerIdAndFolderIdAndName(ownerId,createFileRequest.getFolderId(),key);
+        if(fileExists) throw new Exception("file with same name cannot be created.");
+
+        final var file=utilityService.multipartToFile(multipartFile,key);
+        final var mimeType=Files.probeContentType(file.toPath());
+        if(!extensionMapping.equals(mimeType)) throw new Exception("File type not supported");
+
+        try{
+            final var uploadedFile=s3StorageService.uploadFile(file,key);
+        }finally {
+            if(file.delete()){
+                log.info("Deleted temporary file");
+            }else {
+                log.warn("File deletion failed");
+            }
+        }
+
         final var newFile=File.builder()
                 .ownerId(ownerId)
-                .mimeType(file.getContentType())
+                .mimeType(mimeType)
                 .s3Key(key)
-                .fileSize(file.getSize())
+                .fileSize(multipartFile.getSize())
                 .folderId(createFileRequest.getFolderId())
                 .fileExtension(extension)
                 .name(key)

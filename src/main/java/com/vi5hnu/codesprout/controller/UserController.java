@@ -1,9 +1,7 @@
-package com.vi5hnu.codesprout.auth;
+package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.Dto.*;
-import com.vi5hnu.codesprout.Dto.user.UserDto;
 import com.vi5hnu.codesprout.annotation.RequireUserWith;
-import com.vi5hnu.codesprout.commons.Pageable;
 import com.vi5hnu.codesprout.entity.user.OtpModel;
 import com.vi5hnu.codesprout.entity.user.UserModel;
 import com.vi5hnu.codesprout.entity.user.VerificationTokenModel;

@@ -9,8 +9,8 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum FileExtension {
-    TXT("txt"),
-    MD("md");
+    txt("txt"),
+    md("md");
 
     private final String value;
 
@@ -21,6 +21,6 @@ public enum FileExtension {
 
     @JsonCreator
     public static FileExtension fromValue(String value) {
-        return FileExtension.valueOf(FileExtension.class, value.toUpperCase());
+        return FileExtension.valueOf(FileExtension.class, value.toLowerCase());
     }
 }

@@ -1,49 +1,28 @@
-package com.vi5hnu.codesprout.auth;
+package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.Dto.*;
 import com.vi5hnu.codesprout.Dto.user.UserDto;
 import com.vi5hnu.codesprout.annotation.RequireUserWith;
 import com.vi5hnu.codesprout.commons.Pageable;
-import com.vi5hnu.codesprout.entity.user.OtpModel;
 import com.vi5hnu.codesprout.entity.user.UserModel;
-import com.vi5hnu.codesprout.entity.user.VerificationTokenModel;
-import com.vi5hnu.codesprout.enums.*;
-import com.vi5hnu.codesprout.events.authEvents.*;
 import com.vi5hnu.codesprout.exceptions.ApiException;
-import com.vi5hnu.codesprout.exceptions.UserAlreadyExistsException;
 import com.vi5hnu.codesprout.repository.OtpRepository;
 import com.vi5hnu.codesprout.repository.UserRepository;
 import com.vi5hnu.codesprout.repository.VerificationTokenRepository;
 import com.vi5hnu.codesprout.services.GoogleService;
 import com.vi5hnu.codesprout.services.JwtService;
 import com.vi5hnu.codesprout.services.user.UserService;
-import com.vi5hnu.codesprout.specifications.OtpSpecifications;
-import com.vi5hnu.codesprout.specifications.UserSpecifications;
-import com.vi5hnu.codesprout.specifications.VerificationTokenSpecifications;
-import com.vi5hnu.codesprout.utils.Utils;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.security.Principal;
-import java.security.SignatureException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
 @RestController
 @RequestMapping(path = "api/v1/users")

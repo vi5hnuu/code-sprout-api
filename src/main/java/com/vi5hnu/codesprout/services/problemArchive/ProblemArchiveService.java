@@ -20,6 +20,7 @@ import com.vi5hnu.codesprout.repository.ProblemArchiveRepository;
 import com.vi5hnu.codesprout.repository.ProblemTagAssociationRepository;
 import com.vi5hnu.codesprout.repository.ProblemTagRepository;
 import com.vi5hnu.codesprout.services.S3StorageService;
+import com.vi5hnu.codesprout.services.UtilityService;
 import com.vi5hnu.codesprout.specifications.ProblemArchiveSpecification;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -44,6 +45,7 @@ public class ProblemArchiveService {
     private final ProblemTagAssociationRepository problemTagAssociationRepository;
     private final S3StorageService s3StorageService;
     private final ObjectMapper objectMapper;
+    private final UtilityService utilityService;
 
     @Transactional(readOnly = true)
     public Pageable<ProblemArchiveDto> getProblems(int pageNo, int limit, ProblemLanguage language, ProblemDifficulty difficulty) {
@@ -62,8 +64,16 @@ public class ProblemArchiveService {
 
     public ProblemArchive createProblem(ProblemInfo problem, MultipartFile file,String filePath) throws Exception {
         if(file!=null){
-            final var por=s3StorageService.uploadFile(file,file.getOriginalFilename());
-            if(!por.sdkHttpResponse().isSuccessful()) throw new Exception("Failed to upload file");
+            final var filee=utilityService.multipartToFile(file,file.getOriginalFilename());
+            try{
+                final var por=s3StorageService.uploadFile(filee,file.getOriginalFilename());
+            } finally {
+                if(filee.delete()){
+                    log.info("Deleted temporary file");
+                }else {
+                    log.warn("File deletion failed");
+                }
+            }
             filePath = s3StorageService.uploadedFilePath(file.getOriginalFilename());; // Construct the file's URL
         }
         if(filePath==null) throw new Exception("No Filepath found");

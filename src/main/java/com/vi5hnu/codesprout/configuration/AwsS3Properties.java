@@ -1,4 +1,4 @@
-package com.vi5hnu.codesprout.config;
+package com.vi5hnu.codesprout.configuration;
 
 import lombok.Getter;
 import lombok.Setter;
