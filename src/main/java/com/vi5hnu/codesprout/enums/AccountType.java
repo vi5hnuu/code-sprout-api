@@ -1,8 +1,7 @@
 package com.vi5hnu.codesprout.enums;
 
 public enum AccountType {
-    GOOGLE("GOOGLE"),
-    MANUAL("MANUAL");
+    GOOGLE("GOOGLE");
     public final String type;
 
     // Constructor

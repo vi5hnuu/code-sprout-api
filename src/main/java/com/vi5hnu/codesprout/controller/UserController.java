@@ -3,12 +3,14 @@ package com.vi5hnu.codesprout.controller;
 import com.vi5hnu.codesprout.Dto.*;
 import com.vi5hnu.codesprout.annotation.RequireUserWith;
 import com.vi5hnu.codesprout.entity.user.OtpModel;
+import com.vi5hnu.codesprout.entity.user.UserAuthProviderModel;
 import com.vi5hnu.codesprout.entity.user.UserModel;
 import com.vi5hnu.codesprout.entity.user.VerificationTokenModel;
 import com.vi5hnu.codesprout.enums.*;
 import com.vi5hnu.codesprout.events.authEvents.*;
 import com.vi5hnu.codesprout.exceptions.ApiException;
 import com.vi5hnu.codesprout.exceptions.UserAlreadyExistsException;
+import com.vi5hnu.codesprout.repository.UserAuthProviderRepository;
 import com.vi5hnu.codesprout.services.GoogleService;
 import com.vi5hnu.codesprout.services.JwtService;
 import com.vi5hnu.codesprout.repository.OtpRepository;
@@ -22,6 +24,7 @@ import com.vi5hnu.codesprout.utils.Utils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +53,7 @@ public class UserController {
     @Value("${app.jwt-expiration-milliseconds}") private int jwtExpireMs;
     private final UserService userService;
     private final UserRepository userRepository;
+    private final UserAuthProviderRepository userAuthProviderRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationTokenRepository verificationTokenRepository;
     private final OtpRepository otpRepository;
@@ -76,6 +80,8 @@ public class UserController {
         final var user=userRepository.findOne(UserSpecifications.activeUserById(principal.getName(),null,null,false)).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"User not found"));
         if(user.isLocked()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account suspended");
         else if(!user.isEnabled()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account not verified");
+
+        if(this.userAuthProviderRepository.existsByUserId(user.getId())) throw new ApiException(HttpStatus.BAD_REQUEST,"Account does not exists");//we allow password update only for manual users
 
         //create verification otp for user
         final String otp= Utils.generateOtp();
@@ -125,7 +131,7 @@ public class UserController {
     }
 
 
-    @PostMapping(path = "login")
+    @PostMapping(path = "login")//manual login
     public ResponseEntity<Map<String,Object>> login(@RequestBody @Valid LoginRequestDto loginRequestDto, HttpServletResponse httpResponse) throws ApiException {
         final UserModel userModel=this.userService.findByUsernameOrEmail(loginRequestDto.getUsernameEmail(),null,false,null).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"Invalid username/Email/password"));
 
@@ -135,7 +141,7 @@ public class UserController {
             throw new ApiException(HttpStatus.BAD_REQUEST,"Account Not Verified");
         }
 
-        if(userModel.getAccountType().equals(AccountType.GOOGLE) && userModel.getPassword()==null) throw new ApiException(HttpStatus.BAD_REQUEST,"User not found");
+        if(this.userAuthProviderRepository.existsByUserId(userModel.getId())) throw new ApiException(HttpStatus.BAD_REQUEST,"User not found");//login via providers only
 
         //validate password
         if( !(userModel.getUsername().equals(loginRequestDto.getUsernameEmail()) || userModel.getEmail().equals(loginRequestDto.getUsernameEmail())) || !passwordEncoder.matches(loginRequestDto.getPassword(), userModel.getPassword())){
@@ -149,6 +155,7 @@ public class UserController {
     }
 
     @PostMapping(path = "login/google")
+    @Transactional
     public ResponseEntity<Map<String,Object>> googleLogin(@RequestBody @Valid GoogleLoginRequestDto googleLoginRequestDto, HttpServletResponse httpResponse,HttpServletRequest httpServletRequest) throws ApiException {
         //verify token
         try{
@@ -156,11 +163,10 @@ public class UserController {
             final var data=googleService.verifyAndGetData(googleLoginRequestDto.getIdToken());
 
             final Optional<UserModel> userModel=userRepository.findOne(UserSpecifications.activeUserByUsernameOrEmail(data.getEmail(),null,null,null));
-
             if(userModel.isPresent()){
                 final var user=userModel.get();
-
-                if(!user.getAccountType().equals(AccountType.GOOGLE)) throw new ApiException(HttpStatus.BAD_REQUEST,"Email already registered with other account");
+                final var uap=this.userAuthProviderRepository.findByUserIdAndAccountType(user.getId(),AccountType.GOOGLE).orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST,"user not found."));
+                if(!uap.getProviderUserId().equals(data.getUserId())) throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"something went wrong");//this can never happen as google never change user id
 
                 if(user.isDeleted()){
                     //Handle account deleted previously
@@ -175,7 +181,6 @@ public class UserController {
             }
 
             final var user=UserModel.builder()
-                    .accountType(AccountType.GOOGLE)
                     .email(data.getEmail())
                     .isEnabled(data.isEmailVerified())
                     .roles(Set.of(UserRole.ROLE_USER))
@@ -183,8 +188,13 @@ public class UserController {
                     .profileUrl(data.getPictureUrl())
                     .username(data.getName().replaceAll(" ","")+data.getUserId())
                     .build();
+            final var uap= UserAuthProviderModel.builder()
+                    .accountType(AccountType.GOOGLE)
+                    .providerUserId(data.getUserId())
+                    .build();
 
             final var savedUser=userRepository.save(user);
+            final var savedUAP=userAuthProviderRepository.save(uap);
 
             if(!data.isEmailVerified()){
                 final var token=Utils.generateToken();
@@ -323,7 +333,8 @@ public class UserController {
     public ResponseEntity<Map<String,Object>> forgotPassword(@RequestBody @Valid ForgotPasswordRequestDto forgotPassword, HttpServletRequest httpServletRequest) throws ApiException {
         //check if such user exists
         final UserModel userModel=userService.findByUsernameOrEmail(forgotPassword.getUsernameEmail(),null,false,true).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,String.format("user %s does not exists.",forgotPassword.getUsernameEmail())));
-        if(!userModel.getAccountType().equals(AccountType.MANUAL)) throw new ApiException(HttpStatus.FORBIDDEN,"Google account,cannot reset password");
+        if(userAuthProviderRepository.existsByUserId(userModel.getId())) throw new ApiException(HttpStatus.NOT_FOUND,"password for current account cannot be reset");
+
         if(userModel.isLocked()) throw new ApiException(HttpStatus.FORBIDDEN,"Account suspended");
 
         final var otp=Utils.generateOtp();
@@ -350,8 +361,10 @@ public class UserController {
         final var user=userService.findByUsernameOrEmail(resetPassword.getUsernameEmail(),null,false,true).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"User does not exists"));
         if(user.isLocked()) throw new ApiException(HttpStatus.FORBIDDEN,"Account suspended");
 
+        if(userAuthProviderRepository.existsByUserId(user.getId())) throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"something went wrong");//this can never happen as check is used in forgot-password [only manual users can forgot password rest login via providers only]
+
         List<OtpModel> latestActiveUnusedOtp=this.otpRepository.findAll(OtpSpecifications.getLatestActiveOtps(user.getId(),OtpReason.PASSWORD_FORGOT,OtpStatus.UN_USED));
-        if(latestActiveUnusedOtp.isEmpty() || !latestActiveUnusedOtp.get(0).getOtp().equals(resetPassword.getOtp())) throw new ApiException(HttpStatus.BAD_REQUEST,"Otp expired/invalid");
+        if(latestActiveUnusedOtp.isEmpty() || !latestActiveUnusedOtp.getFirst().getOtp().equals(resetPassword.getOtp())) throw new ApiException(HttpStatus.BAD_REQUEST,"Otp expired/invalid");
 
         //update user
         user.setEnabled(true);

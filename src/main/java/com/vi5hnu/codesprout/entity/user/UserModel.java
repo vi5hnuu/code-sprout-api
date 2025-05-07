@@ -28,10 +28,6 @@ public class UserModel {
     @Id
     private String id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "account_type",nullable = false)
-    private AccountType accountType;
-
     @Column(name = "profile_url") private String profileUrl;
     @Column(name = "first_name") private String firstName;
     @Column(name = "last_name") private String lastName;
@@ -68,7 +64,6 @@ public class UserModel {
     public static UserDto toDto(UserModel userModel){
         return UserDto.builder()
                 .id(userModel.getId())
-                .accountType(userModel.getAccountType())
                 .firstName(userModel.getFirstName())
                 .profileUrl(userModel.getProfileUrl())
                 .lastName(userModel.getLastName())
