@@ -1,12 +1,8 @@
-package com.vi5hnu.codesprout.models.dto;
+package com.vi5hnu.codesprout.models;
 
-import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.sql.Timestamp;
-import java.util.UUID;
 
 @Getter
 @Setter

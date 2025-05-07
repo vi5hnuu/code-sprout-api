@@ -2,12 +2,11 @@ package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.enums.ProblemDifficulty;
 import com.vi5hnu.codesprout.enums.ProblemLanguage;
-import com.vi5hnu.codesprout.models.dto.CreateProblemTagDto;
-import com.vi5hnu.codesprout.models.dto.ProblemInfo;
-import com.vi5hnu.codesprout.models.dto.ProblemInfoWithPath;
+import com.vi5hnu.codesprout.models.CreateProblemTagDto;
+import com.vi5hnu.codesprout.models.ProblemInfo;
+import com.vi5hnu.codesprout.models.ProblemInfoWithPath;
 import com.vi5hnu.codesprout.services.problemArchive.ProblemArchiveService;
 import jakarta.validation.Valid;
-import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

@@ -1,6 +1,6 @@
 package com.vi5hnu.codesprout.events.authEvents;
 
-import com.vi5hnu.codesprout.Dto.user.UserDto;
+import com.vi5hnu.codesprout.models.UserDto;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 

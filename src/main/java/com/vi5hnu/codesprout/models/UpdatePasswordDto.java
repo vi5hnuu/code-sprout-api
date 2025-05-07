@@ -1,4 +1,4 @@
-package com.vi5hnu.codesprout.Dto;
+package com.vi5hnu.codesprout.models;
 
 
 import jakarta.validation.constraints.NotBlank;

@@ -5,7 +5,6 @@ import com.vi5hnu.codesprout.commons.Pageable;
 import com.vi5hnu.codesprout.entity.*;
 import com.vi5hnu.codesprout.enums.FileExtension;
 import com.vi5hnu.codesprout.models.*;
-import com.vi5hnu.codesprout.models.dto.*;
 import com.vi5hnu.codesprout.repository.*;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Files;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor

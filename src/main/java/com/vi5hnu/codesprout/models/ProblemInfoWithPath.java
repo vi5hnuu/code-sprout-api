@@ -1,10 +1,9 @@
-package com.vi5hnu.codesprout.models.dto;
+package com.vi5hnu.codesprout.models;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.vi5hnu.codesprout.enums.ProblemDifficulty;
 import com.vi5hnu.codesprout.enums.ProblemLanguage;
-import com.vi5hnu.codesprout.models.ProblemImage;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

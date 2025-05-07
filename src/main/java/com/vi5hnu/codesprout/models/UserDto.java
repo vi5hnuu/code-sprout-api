@@ -1,6 +1,5 @@
-package com.vi5hnu.codesprout.Dto.user;
+package com.vi5hnu.codesprout.models;
 
-import com.vi5hnu.codesprout.Dto.UserRole;
 import com.vi5hnu.codesprout.enums.AccountType;
 import lombok.*;
 

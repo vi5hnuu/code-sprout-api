@@ -1,9 +1,8 @@
 package com.vi5hnu.codesprout.entity.user;
 
-import com.vi5hnu.codesprout.Dto.UserRole;
-import com.vi5hnu.codesprout.Dto.user.UserDto;
+import com.vi5hnu.codesprout.models.UserRole;
+import com.vi5hnu.codesprout.models.UserDto;
 import com.vi5hnu.codesprout.commons.Constants;
-import com.vi5hnu.codesprout.enums.AccountType;
 import com.vi5hnu.codesprout.utils.IdGenerators;
 import jakarta.persistence.*;
 import lombok.*;

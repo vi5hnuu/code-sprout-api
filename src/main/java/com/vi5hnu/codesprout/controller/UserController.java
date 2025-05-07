@@ -1,6 +1,5 @@
 package com.vi5hnu.codesprout.controller;
 
-import com.vi5hnu.codesprout.Dto.*;
 import com.vi5hnu.codesprout.annotation.RequireUserWith;
 import com.vi5hnu.codesprout.entity.user.OtpModel;
 import com.vi5hnu.codesprout.entity.user.UserAuthProviderModel;
@@ -10,6 +9,7 @@ import com.vi5hnu.codesprout.enums.*;
 import com.vi5hnu.codesprout.events.authEvents.*;
 import com.vi5hnu.codesprout.exceptions.ApiException;
 import com.vi5hnu.codesprout.exceptions.UserAlreadyExistsException;
+import com.vi5hnu.codesprout.models.*;
 import com.vi5hnu.codesprout.repository.UserAuthProviderRepository;
 import com.vi5hnu.codesprout.services.GoogleService;
 import com.vi5hnu.codesprout.services.JwtService;
@@ -156,7 +156,7 @@ public class UserController {
 
     @PostMapping(path = "login/google")
     @Transactional
-    public ResponseEntity<Map<String,Object>> googleLogin(@RequestBody @Valid GoogleLoginRequestDto googleLoginRequestDto, HttpServletResponse httpResponse,HttpServletRequest httpServletRequest) throws ApiException {
+    public ResponseEntity<Map<String,Object>> googleLogin(@RequestBody @Valid GoogleLoginRequestDto googleLoginRequestDto, HttpServletResponse httpResponse, HttpServletRequest httpServletRequest) throws ApiException {
         //verify token
         try{
             //picture,picture ? true = picture,email,name (full name)
@@ -269,10 +269,10 @@ public class UserController {
         return httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":" + httpServletRequest.getServerPort() + "/api/v1/users/verify";
     }
 
-    @GetMapping(path = "re-verify")
-    public ResponseEntity<Map<String,Object>> reVerifyUser(@RequestParam(name = "email") String email,HttpServletRequest httpServletRequest) throws ApiException {
+    @PostMapping(path = "re-verify")
+    public ResponseEntity<Map<String,Object>> reVerifyUser(@RequestBody() @Valid ReVerifyRequest reVerifyRequest,HttpServletRequest httpServletRequest) throws ApiException {
         //if token already exists delete it... not required-> auto delete
-        final UserModel userModel=this.userService.findByUsernameOrEmail(email,null,false,null).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"User does not exists"));
+        final UserModel userModel=this.userService.findByUsernameOrEmail(reVerifyRequest.getUsernameEmail(),null,false,null).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"User does not exists"));
 
         if(userModel.isEnabled()){
             return ResponseEntity.ok(Map.of("success",true,"message","user already verified"));
@@ -299,7 +299,7 @@ public class UserController {
     }
 
     @GetMapping(path = "verify")
-    public ResponseEntity<String> verifyUser(@RequestParam(name = "token",defaultValue = "") String verificationToken) throws ApiException {
+    public ResponseEntity<Map<String,Object>> verifyUser(@RequestParam(name = "token",defaultValue = "") String verificationToken) throws ApiException {
         final var activeUnusedToken=verificationTokenRepository.findOne(VerificationTokenSpecifications.getActiveToken(verificationToken, TokenReason.ACCOUNT_VERIFICATION, TokenStatus.UN_USED)).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"Invalid token"));
 
         final UserModel userModel=userRepository.findById(activeUnusedToken.getUserId()).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"failed to verify, user not found."));
@@ -315,7 +315,7 @@ public class UserController {
         activeUnusedToken.setStatus(TokenStatus.USED);
         verificationTokenRepository.save(activeUnusedToken);
 
-        return ResponseEntity.ok("Verification success!");
+        return ResponseEntity.ok(Map.of("success",true,"message","Verification success!"));
     }
     @PostMapping(path = "jwt/verify")
     public ResponseEntity<String> verifyJwtToken(HttpServletRequest httpServletRequest) throws ApiException {

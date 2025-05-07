@@ -1,6 +1,6 @@
 package com.vi5hnu.codesprout.services;
 
-import com.vi5hnu.codesprout.Dto.user.UserDto;
+import com.vi5hnu.codesprout.models.UserDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
