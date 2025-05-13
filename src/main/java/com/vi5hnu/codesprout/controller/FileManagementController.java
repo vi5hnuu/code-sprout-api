@@ -18,6 +18,15 @@ import java.util.Map;
 public class FileManagementController {
     private final FileManagementService fileManagementService;
 
+    @GetMapping(path = "listing")
+    ResponseEntity<Map<String,Object>> getListing(
+            Principal principal,
+            @RequestParam(name = "parentId",required = false) String parentId,
+            @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
+            @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) {
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getListing(principal.getName(),parentId,pageNo,pageSize)));
+    }
+
     @GetMapping(path = "folders")
     ResponseEntity<Map<String,Object>> getFolders(
             Principal principal,

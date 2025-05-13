@@ -5,6 +5,9 @@ import com.vi5hnu.codesprout.commons.Pageable;
 import com.vi5hnu.codesprout.entity.*;
 import com.vi5hnu.codesprout.enums.FileExtension;
 import com.vi5hnu.codesprout.models.*;
+import com.vi5hnu.codesprout.models.folderStructure.FSItemDto;
+import com.vi5hnu.codesprout.models.folderStructure.FileDto;
+import com.vi5hnu.codesprout.models.folderStructure.FolderDto;
 import com.vi5hnu.codesprout.repository.*;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +32,28 @@ public class FileManagementService {
     private final FileRepository fileRepository;
     private final S3StorageService s3StorageService;
     private final UtilityService utilityService;
+
+    @Transactional(readOnly = true)
+    public Pageable<? extends FSItemDto> getListing(String ownerId, String parentId, @Min(1) int pageNo, @Min(10) int limit) {
+        PageRequest folderPageable = PageRequest.of(pageNo - 1, limit,Sort.by("name").ascending()); // Page index is 0-based in Spring Data
+        final var foldersPage=folderRepository.findAllByOwnerIdAndParentId(ownerId,parentId,folderPageable);
+        final var totalFolders=foldersPage.getTotalElements();
+        final var totalFiles=fileRepository.countByOwnerIdAndFolderId(ownerId,parentId);
+        final var foldersDto=foldersPage.stream().map(this::folderToDto).toList();
+        if(foldersDto.size()<limit){//rest are filled by files
+            final var totalFoldersPages=foldersPage.getTotalPages();
+            final var filesPageNo=(pageNo-totalFoldersPages);
+            final long skipCount=filesPageNo==0 ? 0 : (totalFolders%limit)+(long)(filesPageNo -1)*limit;
+            final long limitCount=filesPageNo==0 ? limit-foldersDto.size() : limit;
+            final var filesPage=parentId!=null ? fileRepository.findAllByOwnerIdAndFolderId(ownerId,parentId,skipCount,limitCount) : fileRepository.findAllByOwnerId(ownerId,skipCount,limitCount);
+            final var filesDtos=filesPage.stream().map(this::fileToDto).toList();
+
+            List<FSItemDto> combined = new ArrayList<>(foldersDto);
+            combined.addAll(filesDtos);
+            return new Pageable<>(combined,pageNo,foldersPage.getTotalElements()+totalFiles);
+        }
+        return new Pageable<>(foldersDto,pageNo,foldersPage.getTotalElements()+totalFiles);
+    }
 
     @Transactional(readOnly = true)
     public Pageable<FolderDto> getFolders(String ownerId,String parentId,@Min(1) int pageNo, @Min(10) int limit) {
@@ -50,7 +77,7 @@ public class FileManagementService {
     }
 
     @Transactional(readOnly = true)
-    public Pageable<FileDto> getFiles(String ownerId,String folderId,@Min(1) int pageNo, @Min(10) int limit) throws Exception {
+    public Pageable<FileDto> getFiles(String ownerId, String folderId, @Min(1) int pageNo, @Min(10) int limit) throws Exception {
         if(folderId!=null){
             final var folderExists=folderRepository.existsByOwnerIdAndId(ownerId, folderId);
             if(!folderExists) throw new Exception("Folder does not exists");
@@ -130,7 +157,7 @@ public class FileManagementService {
         if(!extensionMapping.equals(mimeType)) throw new Exception("File type not supported");
 
         try{
-            final var uploadedFile=s3StorageService.uploadFile(file,key);
+//            final var uploadedFile=s3StorageService.uploadFile(file,key);
         }finally {
             if(file.delete()){
                 log.info("Deleted temporary file");

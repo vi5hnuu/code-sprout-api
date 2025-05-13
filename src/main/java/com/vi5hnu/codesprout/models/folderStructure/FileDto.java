@@ -1,4 +1,4 @@
-package com.vi5hnu.codesprout.models;
+package com.vi5hnu.codesprout.models.folderStructure;
 
 import com.vi5hnu.codesprout.enums.FileExtension;
 import com.vi5hnu.codesprout.enums.Visibility;
@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FileDto {
+public class FileDto implements FSItemDto {
     private String id;
     private String ownerId;
     private String folderId;
