@@ -13,25 +13,11 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "spring.security.oauth2.client")
 public class OAuthClientProperties {
     private Map<String, Registration> registration = new HashMap<>();
-    private Map<String, Provider> provider = new HashMap<>();
 
     @Getter
     @Setter
     public static class Registration {
         private String clientId;
-        private String clientSecret;
-        private String redirectUri;
-        private String tokenRevoke;
-        private List<String> scope;
-    }
-
-    @Getter
-    @Setter
-    public static class Provider {
-        private String authorizationUri;
-        private String tokenUri;
-        private String userInfoUri;
-        private String userNameAttribute;
     }
 }
 
