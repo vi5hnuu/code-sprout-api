@@ -18,7 +18,7 @@ import java.util.Map;
 public class FileManagementController {
     private final FileManagementService fileManagementService;
 
-    @GetMapping(path = "listing")
+    @GetMapping(path = "fs-listing")
     ResponseEntity<Map<String,Object>> getListing(
             Principal principal,
             @RequestParam(name = "parentId",required = false) String parentId,
