@@ -5,6 +5,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.vi5hnu.codesprout.configuration.OAuthClientProperties;
 import com.vi5hnu.codesprout.models.GoogleTokenDataDto;
 import com.vi5hnu.codesprout.exceptions.ApiException;
 import lombok.NonNull;
@@ -12,7 +13,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -24,19 +28,17 @@ import java.util.List;
 @Slf4j
 public class GoogleService {
     @Value("${google.clientIds}")
-    private List<String> googleClientIds;
-    private static final String GOOGLE_REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke";
     private static final GsonFactory GSON_FACTORY = new GsonFactory();
     private static final NetHttpTransport TRANSPORT = new NetHttpTransport();
     private final WebClient webClient;
-    private final JwtService jwtService;
-    private final ObjectMapper objectMapper;
+    private final OAuthClientProperties oAuthClientProperties;
 
 
-    public Mono<Boolean> revokeAccessToken(String accessToken) {
+    public Mono<Boolean> revokeAccessToken(String token) {
+        final var googleProps=oAuthClientProperties.getRegistration().get("google");
         return webClient
                 .post()
-                .uri(GOOGLE_REVOKE_ENDPOINT,uriBuilder -> uriBuilder.queryParam("token", accessToken).build())
+                .uri(googleProps.getTokenRevoke(),uriBuilder -> uriBuilder.queryParam("token", token).build())
                 .retrieve()
                 .toBodilessEntity()
                 .map(response -> response.getStatusCode().is2xxSuccessful())
@@ -47,9 +49,10 @@ public class GoogleService {
     }
 
     public GoogleTokenDataDto verifyAndGetData(@NonNull String idToken) throws SignatureException {
+        final var googleProps=oAuthClientProperties.getRegistration().get("google");
         try {
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(GoogleService.TRANSPORT, GoogleService.GSON_FACTORY)
-                    .setAudience(googleClientIds)
+                    .setAudience(List.of(googleProps.getClientId()))
                     .build();
 
 

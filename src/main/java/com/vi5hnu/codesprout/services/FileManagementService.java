@@ -8,8 +8,6 @@ import com.vi5hnu.codesprout.models.*;
 import com.vi5hnu.codesprout.repository.*;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import org.apache.tika.Tika;
-import org.apache.tika.metadata.Metadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -34,7 +32,7 @@ public class FileManagementService {
     public Pageable<FolderDto> getFolders(String ownerId,String parentId,@Min(1) int pageNo, @Min(10) int limit) {
         PageRequest pageable = PageRequest.of(pageNo - 1, limit,Sort.by("name").ascending()); // Page index is 0-based in Spring Data
         final var folders=folderRepository.findAllByOwnerIdAndParentId(ownerId,parentId,pageable);
-        return new Pageable<>(folders.get().map(this::folderToDto).toList(),pageNo,folders.getTotalPages());
+        return new Pageable<>(folders.get().map(this::folderToDto).toList(),pageNo,folders.getTotalElements());
     }
 
     @Transactional(readOnly = true)
@@ -59,7 +57,7 @@ public class FileManagementService {
         }
         PageRequest pageable = PageRequest.of(pageNo - 1, limit,Sort.by("name").ascending()); // Page index is 0-based in Spring Data
         final var files=fileRepository.findAllByOwnerIdAndFolderId(ownerId,folderId,pageable);
-        return new Pageable<>(files.get().map(this::fileToDto).toList(),pageNo,files.getTotalPages());
+        return new Pageable<>(files.get().map(this::fileToDto).toList(),pageNo,files.getTotalElements());
     }
 
     @Transactional(readOnly = true)

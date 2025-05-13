@@ -94,7 +94,6 @@ public class UserService{
         if(exUser!=null) throw new ApiException(HttpStatus.BAD_REQUEST,"Username/email already exists");
 
         final UserModel userModel= UserModel.builder()
-                .accountType(AccountType.MANUAL)
                 .email(registerRequestDto.getEmail())
                 .firstName(registerRequestDto.getFirstName())
                 .lastName(registerRequestDto.getLastName())

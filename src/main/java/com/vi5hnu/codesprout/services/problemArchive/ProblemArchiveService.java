@@ -59,7 +59,7 @@ public class ProblemArchiveService {
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
-        }).toList(),pageNo,page.getTotalPages());
+        }).toList(),pageNo,page.getTotalElements());
     }
 
     public ProblemArchive createProblem(ProblemInfo problem, MultipartFile file,String filePath) throws Exception {
@@ -98,7 +98,7 @@ public class ProblemArchiveService {
         return new Pageable<>(
                 page.get().map((tag)->new ProblemTagDto(tag.getId(),tag.getTitle(),tag.getDescription(),tag.getImageUrl())).toList(),
                 pageNo,
-                page.getTotalPages());
+                page.getTotalElements());
     }
 
     public Pageable<ProblemArchiveDto> getTagProblems(String tagId, int pageNo, int pageSize) {
@@ -113,7 +113,7 @@ public class ProblemArchiveService {
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
-        }).toList(),pageNo,page.getTotalPages());
+        }).toList(),pageNo,page.getTotalElements());
     }
 
     public Pageable<ProblemArchiveDto> getTagsProblems(List<String> tags, int pageNo, int pageSize) {
@@ -129,7 +129,7 @@ public class ProblemArchiveService {
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
-        }).toList(),pageNo,page.getTotalPages());
+        }).toList(),pageNo,page.getTotalElements());
     }
 
     public ProblemTagDto createProblemTag(CreateProblemTagDto tagInfo) {

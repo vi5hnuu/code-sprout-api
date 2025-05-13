@@ -13,20 +13,20 @@ import java.util.List;
 public class Pageable<T> {
     private List<T> data;
     private int pageNo;
-    private long totalPages;
+    private long totalItems;
 
-    public Pageable(List<T> data, int pageNo, long totalPages){
+    public Pageable(List<T> data, int pageNo, long totalItems){
         if(pageNo<=0) throw new RuntimeException("page number must be >=1");
         this.data=data;
         this.pageNo=pageNo;
-        this.totalPages=totalPages;
+        this.totalItems=totalItems;
     }
 
     static public  <T> Pageable<T> emptyPage() {
         return Pageable.<T>builder()
                 .data(Collections.emptyList())
                 .pageNo(1)
-                .totalPages(0)
+                .totalItems(0)
                 .build();
     }
 }

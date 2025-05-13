@@ -1,6 +1,10 @@
 package com.vi5hnu.codesprout.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vi5hnu.codesprout.annotation.RequireUserWith;
+import com.vi5hnu.codesprout.configuration.OAuthClientProperties;
 import com.vi5hnu.codesprout.entity.user.OtpModel;
 import com.vi5hnu.codesprout.entity.user.UserAuthProviderModel;
 import com.vi5hnu.codesprout.entity.user.UserModel;
@@ -26,24 +30,27 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.SignatureException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping(path = "api/v1/users")
@@ -51,6 +58,7 @@ import java.util.Set;
 public class UserController {
     @Value("${app.jwt-secret}") private String jwtSecret;
     @Value("${app.jwt-expiration-milliseconds}") private int jwtExpireMs;
+
     private final UserService userService;
     private final UserRepository userRepository;
     private final UserAuthProviderRepository userAuthProviderRepository;
@@ -60,6 +68,9 @@ public class UserController {
     private final ApplicationEventPublisher publisher;
     private final GoogleService googleService;
     private final JwtService jwtService;
+    private final OAuthClientProperties oAuthClientProperties;
+    private final WebClient webClient;
+    private final OAuthClientProperties authClientProperties;
 
     @GetMapping(path = "me")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
@@ -188,12 +199,13 @@ public class UserController {
                     .profileUrl(data.getPictureUrl())
                     .username(data.getName().replaceAll(" ","")+data.getUserId())
                     .build();
+            final var savedUser=userRepository.saveAndFlush(user);
             final var uap= UserAuthProviderModel.builder()
                     .accountType(AccountType.GOOGLE)
+                    .userId(savedUser.getId())
                     .providerUserId(data.getUserId())
                     .build();
 
-            final var savedUser=userRepository.save(user);
             final var savedUAP=userAuthProviderRepository.save(uap);
 
             if(!data.isEmailVerified()){
