@@ -18,6 +18,7 @@ public class OAuthClientProperties {
     @Setter
     public static class Registration {
         private String clientId;
+        private String tokenRevoke;
     }
 }
 
