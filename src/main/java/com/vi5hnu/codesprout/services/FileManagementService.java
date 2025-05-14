@@ -81,7 +81,7 @@ public class FileManagementService {
     @Transactional(readOnly = true)
     public FolderDto getFolderById(String ownerId,String folderId) throws ApiException {
         if(folderId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid folder id");
-        final var folder=folderRepository.findOne(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,null,Visibility.PUBLIC,false)).orElse(null);
+        final var folder=folderRepository.findOne(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,Visibility.PUBLIC,false)).orElse(null);
         if(folder==null) return null;
         return folderToDto(folder);
     }
@@ -89,7 +89,7 @@ public class FileManagementService {
     @Transactional(readOnly = true)
     public FolderDto getFolderByName(String ownerId,String name) throws ApiException {
         if(name==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid folder name");
-        final var folder=folderRepository.findOne(FileMgmtSpecification.getFoldersBy(ownerId,null,name,null,Visibility.PUBLIC,false)).orElse(null);
+        final var folder=folderRepository.findOne(FileMgmtSpecification.getFoldersBy(ownerId,null,name,Visibility.PUBLIC,false)).orElse(null);
         if(folder==null) return null;
         return folderToDto(folder);
     }
@@ -97,7 +97,7 @@ public class FileManagementService {
     @Transactional(readOnly = true)
     public Pageable<FileDto> getFiles(String ownerId, String folderId, @Min(1) int pageNo, @Min(10) int limit) throws Exception {
         if(folderId!=null){
-            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,null,Visibility.PUBLIC,false));
+            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,Visibility.PUBLIC,false));
             if(!folderExists) throw new Exception("Folder does not exists");
         }
         PageRequest pageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC,"name")); // Page index is 0-based in Spring Data
@@ -113,8 +113,7 @@ public class FileManagementService {
 
 
         if(folderId!=null){
-            if(!folderId.equals(file.getFolderId())) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid folder id");
-            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,null,Visibility.PUBLIC,false));
+            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,Visibility.PUBLIC,false));
             if(!folderExists) throw new Exception("Folder does not exists");
         }
         return fileToDto(file);
@@ -128,8 +127,7 @@ public class FileManagementService {
 
 
         if(folderId!=null){
-            if(!folderId.equals(file.getFolderId())) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid folder id");
-            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,null,Visibility.PUBLIC,false));
+            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,Visibility.PUBLIC,false));
             if(!folderExists) throw new Exception("Folder does not exists");
         }
         return fileToDto(file);
@@ -138,12 +136,12 @@ public class FileManagementService {
     @Transactional(readOnly = true)
     public FileDto getFileById(String ownerId,String fileId) throws ApiException {
         if(fileId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file id");
-        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,null,Visibility.PUBLIC,false)).orElse(null);
+        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,Visibility.PUBLIC,false)).orElse(null);
         if(file==null) return null;
 
 
         if(file.getFolderId()!=null){
-            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,file.getFolderId(),null,null,Visibility.PUBLIC,false));
+            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,file.getFolderId(),null,Visibility.PUBLIC,false));
             if(!folderExists) throw new ApiException(HttpStatus.BAD_REQUEST,"Folder does not exists");
         }
         return fileToDto(file);
@@ -152,12 +150,12 @@ public class FileManagementService {
     @Transactional(readOnly = true)
     public FileDto getFileByName(String ownerId,String name) throws ApiException {
         if(name==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file name");
-        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,null,name,null,Visibility.PUBLIC,false)).orElse(null);
+        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,null,name,Visibility.PUBLIC,false)).orElse(null);
         if(file==null) return null;
 
 
         if(file.getFolderId()!=null){
-            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,file.getFolderId(),null,null,Visibility.PUBLIC,false));
+            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,file.getFolderId(),null,Visibility.PUBLIC,false));
             if(!folderExists) throw new ApiException(HttpStatus.BAD_REQUEST,"Folder does not exists");
         }
         return fileToDto(file);
@@ -283,9 +281,9 @@ public class FileManagementService {
         Query query = entityManager.createNativeQuery(sql.toString(), File.class);
         query.setParameter("ownerId", ownerId);
         if (folderId != null) query.setParameter("folderId", folderId);
-        if (visibility != null) query.setParameter("visibility", visibility);
-        query.setParameter("limit", limit);
+        if (visibility != null) query.setParameter("visibility", visibility.name());
         query.setParameter("offset", offset);
+        query.setParameter("limit", limit);
 
         return query.getResultList();
     }

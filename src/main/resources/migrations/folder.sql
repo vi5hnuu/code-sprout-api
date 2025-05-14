@@ -8,7 +8,7 @@ CREATE TABLE folder (
     password VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    visibility ENUM('public', 'private') DEFAULT 'private',
+    visibility ENUM('PUBLIC', 'PRIVATE') DEFAULT 'PRIVATE',
     CONSTRAINT fk_folders_parent FOREIGN KEY (parent_id) REFERENCES folder(id) ON DELETE RESTRICT,  -- Prevent parent folder deletion if child exists
     INDEX idx_owner_parent (owner_id, parent_id),
     INDEX idx_owner_folder_name (owner_id, name),
@@ -24,7 +24,7 @@ CREATE TABLE file (
     mime_type VARCHAR(50) CHECK(mime_type in ('text/plain','text/markdown')) NOT NULL,
     s3_key VARCHAR(1024) NOT NULL,
     file_size BIGINT UNSIGNED NOT NULL, --size in bytes
-    visibility ENUM('public', 'private') DEFAULT 'private',
+    visibility ENUM('PUBLIC', 'PRIVATE') DEFAULT 'PRIVATE',
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

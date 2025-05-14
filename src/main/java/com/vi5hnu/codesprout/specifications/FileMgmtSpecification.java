@@ -34,6 +34,31 @@ public class FileMgmtSpecification {
             if (id != null) predicates.add(cb.equal(root.get("id"), id));
             if (name != null) predicates.add(cb.equal(root.get("name"), name));
             if (parentId != null) predicates.add(cb.equal(root.get("parentId"), parentId));
+            else predicates.add(cb.isNull(root.get("parentId")));
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<Folder> getFoldersBy(
+            String ownerId,
+            String id,
+            String name,
+            Visibility visibility,
+            Boolean isDeleted
+    ) {
+        return (Root<Folder> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Default to public if not specified
+            if (visibility != null) predicates.add(cb.equal(root.get("visibility"), visibility));
+
+            // Default to false if not specified
+            predicates.add(cb.equal(root.get("isDeleted"), isDeleted != null ? isDeleted : false));
+
+            predicates.add(cb.equal(root.get("ownerId"), ownerId));
+            if (id != null) predicates.add(cb.equal(root.get("id"), id));
+            if (name != null) predicates.add(cb.equal(root.get("name"), name));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -59,7 +84,33 @@ public class FileMgmtSpecification {
             predicates.add(cb.equal(root.get("ownerId"), ownerId));
             if (id != null) predicates.add(cb.equal(root.get("id"), id));
             if (name != null) predicates.add(cb.equal(root.get("name"), name));
+
             if (folderId != null) predicates.add(cb.equal(root.get("folderId"), folderId));
+            else predicates.add(cb.isNull(root.get("folderId")));
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<File> getFilesBy(
+            String ownerId,
+            String id,
+            String name,
+            Visibility visibility,
+            Boolean isDeleted
+    ) {
+        return (Root<File> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Default to public if not specified
+            predicates.add(cb.equal(root.get("visibility"), visibility!=null ? visibility : Visibility.PUBLIC));
+
+            // Default to false if not specified
+            predicates.add(cb.equal(root.get("isDeleted"), isDeleted != null ? isDeleted : false));
+
+            predicates.add(cb.equal(root.get("ownerId"), ownerId));
+            if (id != null) predicates.add(cb.equal(root.get("id"), id));
+            if (name != null) predicates.add(cb.equal(root.get("name"), name));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
