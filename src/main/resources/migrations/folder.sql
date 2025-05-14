@@ -8,6 +8,7 @@ CREATE TABLE folder (
     password VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    visibility ENUM('public', 'private') DEFAULT 'private',
     CONSTRAINT fk_folders_parent FOREIGN KEY (parent_id) REFERENCES folder(id) ON DELETE RESTRICT,  -- Prevent parent folder deletion if child exists
     INDEX idx_owner_parent (owner_id, parent_id),
     INDEX idx_owner_folder_name (owner_id, name),

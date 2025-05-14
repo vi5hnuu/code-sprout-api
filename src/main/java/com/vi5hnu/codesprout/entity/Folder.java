@@ -1,5 +1,6 @@
 package com.vi5hnu.codesprout.entity;
 
+import com.vi5hnu.codesprout.enums.Visibility;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -52,6 +53,10 @@ public class Folder {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Timestamp updatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private Visibility visibility = Visibility.PRIVATE;
 
     @PrePersist
     public void assignId() {

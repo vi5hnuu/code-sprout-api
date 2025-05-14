@@ -1,5 +1,6 @@
 package com.vi5hnu.codesprout.controller;
 
+import com.vi5hnu.codesprout.exceptions.ApiException;
 import com.vi5hnu.codesprout.models.CreateFileRequest;
 import com.vi5hnu.codesprout.models.CreateFolderRequest;
 import com.vi5hnu.codesprout.services.FileManagementService;
@@ -23,7 +24,7 @@ public class FileManagementController {
             Principal principal,
             @RequestParam(name = "parentId",required = false) String parentId,
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
-            @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) {
+            @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws ApiException {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getListing(principal.getName(),parentId,pageNo,pageSize)));
     }
 
@@ -39,14 +40,14 @@ public class FileManagementController {
     @GetMapping(path = "folders/{folderId}")
     ResponseEntity<Map<String,Object>> getFolderById(
             Principal principal,
-            @PathVariable(name = "folderId") String folderId) {
+            @PathVariable(name = "folderId") String folderId) throws ApiException {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolderById(principal.getName(),folderId)));
     }
 
     @GetMapping(path = "folders/{folderName}")
     ResponseEntity<Map<String,Object>> getFolderByName(
             Principal principal,
-            @PathVariable(name = "folderName") String folderName) {
+            @PathVariable(name = "folderName") String folderName) throws ApiException {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolderByName(principal.getName(),folderName)));
     }
 

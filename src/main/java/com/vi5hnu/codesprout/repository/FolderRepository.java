@@ -4,12 +4,13 @@ import com.vi5hnu.codesprout.entity.Folder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface FolderRepository extends JpaRepository<Folder, String>{
+public interface FolderRepository extends JpaRepository<Folder, String>, JpaSpecificationExecutor<Folder> {
 
     Page<Folder> findAllByOwnerId(String ownerId, Pageable pageable);
     Page<Folder> findAllByOwnerIdAndParentId(String ownerId, String pId, Pageable pageable);
