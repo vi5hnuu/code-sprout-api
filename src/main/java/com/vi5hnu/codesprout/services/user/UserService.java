@@ -111,4 +111,9 @@ public class UserService{
     public Optional<UserModel>  findUserById(String userId) {
         return userRepository.findById(userId);
     }
+
+    public UserDto validateUser(String sourceUserId) throws ApiException {
+        final var user=userRepository.findOne(UserSpecifications.activeUserById(sourceUserId)).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"invalid user id"));
+        return UserModel.toDto(user);
+    }
 }
