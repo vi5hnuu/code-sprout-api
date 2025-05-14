@@ -9,6 +9,9 @@ import com.vi5hnu.codesprout.models.folderStructure.FSItemDto;
 import com.vi5hnu.codesprout.models.folderStructure.FileDto;
 import com.vi5hnu.codesprout.models.folderStructure.FolderDto;
 import com.vi5hnu.codesprout.repository.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -33,6 +36,9 @@ public class FileManagementService {
     private final S3StorageService s3StorageService;
     private final UtilityService utilityService;
 
+    @PersistenceContext
+    private final EntityManager entityManager;
+
     @Transactional(readOnly = true)
     public Pageable<? extends FSItemDto> getListing(String ownerId, String parentId, @Min(1) int pageNo, @Min(10) int limit) {
         PageRequest folderPageable = PageRequest.of(pageNo - 1, limit,Sort.by("name").ascending()); // Page index is 0-based in Spring Data
@@ -45,7 +51,7 @@ public class FileManagementService {
             final var filesPageNo=(pageNo-totalFoldersPages);
             final long skipCount=filesPageNo==0 ? 0 : (totalFolders%limit)+(long)(filesPageNo -1)*limit;
             final long limitCount=filesPageNo==0 ? limit-foldersDto.size() : limit;
-            final var filesPage=parentId!=null ? fileRepository.findAllByOwnerIdAndFolderId(ownerId,parentId,skipCount,limitCount) : fileRepository.findAllByOwnerId(ownerId,skipCount,limitCount);
+            final var filesPage=this.findFilesByOwnerIdAndFolderId(ownerId,parentId,skipCount,limitCount);
             final var filesDtos=filesPage.stream().map(this::fileToDto).toList();
 
             List<FSItemDto> combined = new ArrayList<>(foldersDto);
@@ -157,7 +163,7 @@ public class FileManagementService {
         if(!extensionMapping.equals(mimeType)) throw new Exception("File type not supported");
 
         try{
-//            final var uploadedFile=s3StorageService.uploadFile(file,key);
+            final var uploadedFile=s3StorageService.uploadFile(file,key);
         }finally {
             if(file.delete()){
                 log.info("Deleted temporary file");
@@ -212,5 +218,26 @@ public class FileManagementService {
                 .createdAt(file.getCreatedAt())
                 .updatedAt(file.getUpdatedAt())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<File> findFilesByOwnerIdAndFolderId(String ownerId, String folderId,@Min(0) long offset,@Min(1) long limit) {
+        StringBuilder sql = new StringBuilder(String.format("SELECT * FROM %s WHERE owner_id = :ownerId",File.TABLE_NAME));
+
+        if (folderId == null) {
+            sql.append(" AND folder_id IS NULL");
+        } else {
+            sql.append(" AND folder_id = :folderId");
+        }
+
+        sql.append(" LIMIT :limit OFFSET :offset");
+
+        Query query = entityManager.createNativeQuery(sql.toString(), File.class);
+        query.setParameter("ownerId", ownerId);
+        if (folderId != null) query.setParameter("folderId", folderId);
+        query.setParameter("limit", limit);
+        query.setParameter("offset", offset);
+
+        return query.getResultList();
     }
 }

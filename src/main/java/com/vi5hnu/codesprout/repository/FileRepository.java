@@ -15,14 +15,6 @@ import java.util.Optional;
 @Repository
 public interface FileRepository extends JpaRepository<File, String>{
     Page<File> findAllByOwnerIdAndFolderId(String ownerId, String folderId, Pageable pageable);
-
-    @Query(value = "SELECT * FROM file WHERE owner_id = :ownerId AND folder_id = :folderId LIMIT :limit OFFSET :offset", nativeQuery = true)
-    List<File> findAllByOwnerIdAndFolderId(@Param("ownerId") String ownerId, @Param("folderId") String folderId, @Param("offset") long offset, @Param("limit") long limit);
-
-    @Query(value = "SELECT * FROM file WHERE owner_id = :ownerId AND folder_id IS NULL LIMIT :limit OFFSET :offset", nativeQuery = true)
-    List<File> findAllByOwnerId(@Param("ownerId") String ownerId, @Param("offset") long offset, @Param("limit") long limit);
-
-
     Optional<File> findByOwnerIdAndFolderIdAndId(String ownerId, String folderId, String fileId);
     Optional<File> findByOwnerIdAndFolderIdAndName(String ownerId, String folderId, String fileName);
     Optional<File> findByOwnerIdAndId(String ownerId, String fileId);
