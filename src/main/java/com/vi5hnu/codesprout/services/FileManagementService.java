@@ -51,6 +51,7 @@ public class FileManagementService {
 
     @Transactional(readOnly = true)
     public Pageable<? extends FSItemDto> getListing(String ownerId, String parentId, @Min(1) int pageNo, @Min(10) int limit) throws ApiException {
+        if(parentId!=null && !folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,parentId,null,Visibility.PUBLIC,false))) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid folder id");
         PageRequest folderPageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC, "name")); // Page index is 0-based in Spring Data
         final var foldersPage=folderRepository.findAll(FileMgmtSpecification.getFoldersBy(ownerId,null,null,parentId, Visibility.PUBLIC,false),folderPageable);
         final var totalFolders=foldersPage.getTotalElements();
