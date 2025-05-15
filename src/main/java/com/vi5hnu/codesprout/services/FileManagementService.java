@@ -60,7 +60,7 @@ public class FileManagementService {
         if(foldersDto.size()<limit){//rest are filled by files
             final var totalFoldersPages=foldersPage.getTotalPages();
             final var filesPageNo=(pageNo-totalFoldersPages);
-            final long skipCount=filesPageNo==0 ? 0 : (totalFolders%limit)+(long)(filesPageNo -1)*limit;
+            final long skipCount=filesPageNo==0 ? 0 : ((long)totalFoldersPages*limit-totalFolders)+(long)(filesPageNo -1)*limit;
             final long limitCount=filesPageNo==0 ? limit-foldersDto.size() : limit;
             final var filesPage=this.findFilesBy(ownerId,parentId,skipCount,limitCount,Visibility.PUBLIC,Map.of("name",Sort.Direction.ASC));
             final var filesDtos=filesPage.stream().map(this::fileToDto).toList();
