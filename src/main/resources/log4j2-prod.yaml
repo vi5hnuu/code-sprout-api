@@ -1,0 +1,44 @@
+Configuration:
+  status: WARN
+  properties:
+    property:
+      - name: LOG_PATH
+        value: ${env:HOME}/logs/myapp
+      - name: LOG_FILE_NAME
+        value: application.log
+      - name: LOG_PATTERN
+        value: "%-5level [%d{yyyy-MM-dd HH:mm:ss,SSS}] [%thread] [%logger{1}]: %msg%n"
+
+  appenders:
+    RollingFile:
+      name: FILE
+      fileName: "${LOG_PATH}/${LOG_FILE_NAME}"
+      filePattern: "${LOG_PATH}/application-%d{yyyy-MM-dd}-%i.log.gz"
+      PatternLayout:
+        pattern: "${LOG_PATTERN}"
+      Policies:
+        TimeBasedTriggeringPolicy:
+          interval: 1
+          modulate: true
+        SizeBasedTriggeringPolicy:
+          size: 1GB
+      DefaultRolloverStrategy:
+        max: 30
+
+  loggers:
+    root:
+      level: info
+      additivity: false
+      AppenderRef:
+        - ref: FILE
+    logger:
+      - name: org.springframework
+        level: info
+        additivity: false
+        AppenderRef:
+          - ref: FILE
+      - name: com.vi5hnu.codesprout
+        level: info
+        additivity: false
+        AppenderRef:
+          - ref: FILE

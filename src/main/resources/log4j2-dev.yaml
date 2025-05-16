@@ -1,0 +1,36 @@
+Configuration:
+  status: WARN
+  monitorInterval: 30
+  properties:
+    property:
+      - name: LOG_PATH
+        value: ${env:HOME}/logs/myapp
+      - name: LOG_FILE_NAME
+        value: application.log
+      - name: LOG_PATTERN
+        value: "%-5level [%d{yyyy-MM-dd HH:mm:ss,SSS}] [%thread] [%logger{1}]: %msg%n"
+
+  appenders:
+    Console:
+      name: CONSOLE
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "${LOG_PATTERN}"
+
+  loggers:
+    root:
+      level: info
+      additivity: false
+      AppenderRef:
+        - ref: CONSOLE
+    logger:
+      - name: org.springframework
+        level: info
+        additivity: false
+        AppenderRef:
+          - ref: CONSOLE
+      - name: com.vi5hnu.codesprout
+        level: debug
+        additivity: false
+        AppenderRef:
+          - ref: CONSOLE
