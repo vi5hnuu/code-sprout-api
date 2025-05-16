@@ -123,6 +123,14 @@
 			<artifactId>aspectjweaver</artifactId>
 		</dependency>
 
+		<!--	rate limit	-->
+		<!-- https://mvnrepository.com/artifact/com.bucket4j/bucket4j-core -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j-core</artifactId>
+			<version>8.10.1</version>
+		</dependency>
+
 		<!--	log4j2 logging	-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
