@@ -15,13 +15,15 @@ public class BucketService {
     private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
 
     public Bucket resolveBucket(String userId, int capacity, int time, TimeUnit unit) {
-        Duration duration = Duration.ofMillis(unit.toMillis(time));
-        Bandwidth limit = Bandwidth.builder()
-                .capacity(capacity)
-                .refillIntervally(capacity, duration)
-                .build();
-        return cache.computeIfAbsent(userId, id -> Bucket.builder()
-                .addLimit(limit)
-                .build());
+        return cache.computeIfAbsent(userId, id -> {
+            Duration duration = Duration.ofMillis(unit.toMillis(time));
+            Bandwidth limit = Bandwidth.builder()
+                    .capacity(capacity)
+                    .refillIntervally(capacity, duration)
+                    .build();
+            return Bucket.builder()
+                    .addLimit(limit)
+                    .build();
+        });
     }
 }
