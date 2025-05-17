@@ -1,8 +1,10 @@
 package com.vi5hnu.codesprout.controller;
 
+import com.vi5hnu.codesprout.annotation.RequireUserWith;
 import com.vi5hnu.codesprout.exceptions.ApiException;
 import com.vi5hnu.codesprout.models.CreateFileRequest;
 import com.vi5hnu.codesprout.models.CreateFolderRequest;
+import com.vi5hnu.codesprout.models.UserRole;
 import com.vi5hnu.codesprout.services.FileManagementService;
 import com.vi5hnu.codesprout.services.user.UserService;
 import jakarta.validation.Valid;
@@ -119,6 +121,7 @@ public class FileManagementController {
     }
 
     @PostMapping(path = "create-folder")
+    @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
     ResponseEntity<Map<String,Object>> createFolder(Principal principal,
                                                     @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
                                                     @Valid  @RequestBody CreateFolderRequest folderRequest) throws Exception {
@@ -126,6 +129,7 @@ public class FileManagementController {
     }
 
     @PostMapping(path = "create-file",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
     ResponseEntity<Map<String,Object>> createFile(Principal principal,
                                                   @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
                                                   @Valid  @RequestPart("info") CreateFileRequest fileRequest,@RequestPart("file") MultipartFile file) throws Exception {

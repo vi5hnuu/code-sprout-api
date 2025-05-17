@@ -54,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
     @Override
-    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {//not required but will save processing for these endpoints
         return Arrays.stream(SecurityConfig.ENDPOINTS_WHITELIST).anyMatch(endpoint-> new AntPathRequestMatcher(endpoint).matches(request));
     }
 }

@@ -19,13 +19,13 @@ Configuration:
 
   loggers:
     root:
-      level: info
+      level: debug
       additivity: false
       AppenderRef:
         - ref: CONSOLE
     logger:
       - name: org.springframework
-        level: info
+        level: debug
         additivity: false
         AppenderRef:
           - ref: CONSOLE

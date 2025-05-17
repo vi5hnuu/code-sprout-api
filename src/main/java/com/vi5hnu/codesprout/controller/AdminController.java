@@ -59,6 +59,7 @@ public class AdminController {
         final var user = userService.deleteUserById(userId);
         return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("user %s deleted successfully.",user.getUsername())));
     }
+
     @PatchMapping(path = "add-role")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
     public ResponseEntity<Map<String,Object>> addRole(@RequestBody @Valid RoleDto roleDto) throws ApiException {

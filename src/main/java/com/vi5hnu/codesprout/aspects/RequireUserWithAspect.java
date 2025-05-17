@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.security.Principal;
+import java.util.Arrays;
 
 @Aspect
 @Component
@@ -30,6 +31,8 @@ public class RequireUserWithAspect {
             throw new ApiException(HttpStatus.FORBIDDEN, String.format("User is %s.",user.isLocked() ? "blocked, Please contact the administrator for more":"not blocked"));
         }else if (!requireUserWith.isDeleted() && user.isDeleted()) {
             throw new ApiException(HttpStatus.NOT_FOUND, "user not found.");
+        }else if(requireUserWith.hasRoles().length!=0 && Arrays.stream(requireUserWith.hasRoles()).noneMatch(userRole -> user.getRoles().contains(userRole))){
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "you are not authorized to take this action");
         }
     }
 }

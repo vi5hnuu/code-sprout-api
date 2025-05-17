@@ -181,22 +181,22 @@ public class FileManagementService {
     @Transactional(readOnly = false)
     public FileDto createFile(String ownerId, CreateFileRequest createFileRequest,MultipartFile multipartFile) throws Exception {
         final var originalFileName=multipartFile.getOriginalFilename();
-        if(originalFileName==null) throw new Exception("Invalid file name");
+        if(originalFileName==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file name");
         final var extension= FileExtension.fromValue(extractExtension(originalFileName));
         final var key=createFileRequest.getName()!=null ? createFileRequest.getName()+"."+extension.getValue() : multipartFile.getOriginalFilename();
         if(key==null) throw new Exception("Invalid file name");
 
         final var extensionMapping=Constants.allowedExtensions.get(extension.getValue());
-        if(extensionMapping==null) throw new Exception("file type not supported");
+        if(extensionMapping==null) throw new ApiException(HttpStatus.BAD_REQUEST,"file type not supported");
         final var fileExists=fileRepository.existsByOwnerIdAndFolderIdAndName(ownerId,createFileRequest.getFolderId(),key);
-        if(fileExists) throw new Exception("file with same name cannot be created.");
+        if(fileExists) throw new ApiException(HttpStatus.BAD_REQUEST,"file with same name cannot be created.");
 
         final var file=utilityService.multipartToFile(multipartFile,key);
         final var mimeType=Files.probeContentType(file.toPath());
-        if(!extensionMapping.equals(mimeType)) throw new Exception("File type not supported");
+        if(!extensionMapping.equals(mimeType)) throw new ApiException(HttpStatus.BAD_REQUEST,"File type not supported");
 
         try{
-            final var uploadedFile=s3StorageService.uploadFile(file,key);
+//            final var uploadedFile=s3StorageService.uploadFile(file,key);
         }finally {
             if(file.delete()){
                 log.info("Deleted temporary file");
