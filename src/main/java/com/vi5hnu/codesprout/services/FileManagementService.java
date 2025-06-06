@@ -165,7 +165,7 @@ public class FileManagementService {
     @Transactional(readOnly = false)
     public FolderDto createFolder(String ownerId, CreateFolderRequest createFolderRequest) throws Exception {
         final var folderExists=folderRepository.existsByOwnerIdAndParentIdAndName(ownerId,createFolderRequest.getParentId(),createFolderRequest.getName());
-        if(folderExists) throw new Exception("folder with same name cannot be created.");
+        if(folderExists) throw new ApiException(HttpStatus.BAD_REQUEST,"folder with same name cannot be created.");
 
         final var newFolder=Folder.builder()
                 .ownerId(ownerId)
@@ -184,7 +184,7 @@ public class FileManagementService {
         if(originalFileName==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file name");
         final var extension= FileExtension.fromValue(extractExtension(originalFileName));
         final var key=createFileRequest.getName()!=null ? createFileRequest.getName()+"."+extension.getValue() : multipartFile.getOriginalFilename();
-        if(key==null) throw new Exception("Invalid file name");
+        if(key==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file name");
 
         final var extensionMapping=Constants.allowedExtensions.get(extension.getValue());
         if(extensionMapping==null) throw new ApiException(HttpStatus.BAD_REQUEST,"file type not supported");

@@ -23,11 +23,6 @@ import java.util.Map;
 public class ProblemArchiveController {
     private final ProblemArchiveService problemArchiveService;
 
-//    @GetMapping(path = "info/{kathaId}")
-//    ResponseEntity<Map<String,Object>> getVratKathaInfo(@PathVariable(name = "kathaId") String kathaId) throws ApiException {
-//        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.vratKathaService.getVratKathInfo(kathaId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,String.format("katha for id %s not found",kathaId)))));
-//    }
-//
     @GetMapping(path = "problem/all/info")
     ResponseEntity<Map<String,Object>> getProblemsInfo(
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,

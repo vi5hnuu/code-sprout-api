@@ -32,7 +32,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String,Object>> apiException(ApiException ex, WebRequest webRequest){
-        return ResponseEntity.status(ex.getHttpStatus()).body(Map.of("success",false,"message", !activeProfile.equals(Profile.PROD.profile) ? ex.getStackTrace() : ex.getMessage()));
+        return ResponseEntity.status(ex.getHttpStatus()).body(Map.of("success",false,"message", !activeProfile.equals(Profile.PROD.profile) ? ex.getMessage() : ex.getMessage()));
     }
 
     @Override
