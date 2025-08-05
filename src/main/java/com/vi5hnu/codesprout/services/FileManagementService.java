@@ -196,7 +196,7 @@ public class FileManagementService {
         if(!extensionMapping.equals(mimeType)) throw new ApiException(HttpStatus.BAD_REQUEST,"File type not supported");
 
         try{
-//            final var uploadedFile=s3StorageService.uploadFile(file,key);
+            final var uploadedFile=s3StorageService.uploadFile(file,key);
         }finally {
             if(file.delete()){
                 log.info("Deleted temporary file");
@@ -220,8 +220,9 @@ public class FileManagementService {
     }
 
     private String extractExtension(String fileName){
-        String[] parts = fileName.split("\\.", 2);
-        return parts.length == 2 ? parts[1] : "";
+        int lastIndexOfDot = fileName.lastIndexOf('.');
+        if(lastIndexOfDot==-1) return "";
+        return fileName.substring(lastIndexOfDot+1);
     }
 
     private FolderDto folderToDto(Folder folder){
