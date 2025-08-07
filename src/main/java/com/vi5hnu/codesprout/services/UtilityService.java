@@ -1,20 +1,13 @@
 package com.vi5hnu.codesprout.services;
 
-import com.vi5hnu.codesprout.configuration.AwsS3Properties;
 import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class UtilityService {
@@ -27,6 +20,18 @@ public class UtilityService {
             return file;
         }catch (IOException e){
             log.error("Error converting multipart file to file",e);
+            throw e;
+        }
+    }
+
+    public File contentToFile(@NotNull String content,@NotNull String fileName) throws IOException {
+        File file=new File(fileName);
+        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        try(FileOutputStream fos=new FileOutputStream(file)){
+            fos.write(bytes);
+            return file;
+        }catch (IOException e){
+            log.error("Error converting content to file",e);
             throw e;
         }
     }

@@ -35,3 +35,5 @@ COPY --from=builder /build/target/code-sprout-api.jar .
 EXPOSE 9093
 
 CMD ["java", "-jar", "code-sprout-api.jar"]
+
+#docker run --env-file .env -p 9093:9093 code-sprout-api

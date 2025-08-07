@@ -20,6 +20,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -99,9 +100,16 @@ public class UserService{
                 .lastName(registerRequestDto.getLastName())
                 .username(registerRequestDto.getUserName())
                 .roles(Set.of(UserRole.ROLE_USER))
+                .profileUrl(getRandomProfilePicture())
                 .password(passwordEncoder.encode(registerRequestDto.getPassword()))
                 .build();
         return userRepository.save(userModel);
+    }
+
+    private String getRandomProfilePicture(){
+        String avatarUrl="https://code-sprout-content.laxmi.solutions/avatar/avatar-%d.png";
+        int randomNumber = ThreadLocalRandom.current().nextInt(1, 101); // 1 to 100 (inclusive)
+        return String.format(avatarUrl, randomNumber);
     }
 
     public Optional<UserModel> findByUsernameOrEmail(String usernameEmail,Boolean isLocked,Boolean isDeleted,Boolean isEnabled){

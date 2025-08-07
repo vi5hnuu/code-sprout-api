@@ -2,6 +2,7 @@ package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.annotation.RequireUserWith;
 import com.vi5hnu.codesprout.exceptions.ApiException;
+import com.vi5hnu.codesprout.models.CreateFileFromContentRequest;
 import com.vi5hnu.codesprout.models.CreateFileRequest;
 import com.vi5hnu.codesprout.models.CreateFolderRequest;
 import com.vi5hnu.codesprout.models.UserRole;
@@ -123,7 +124,6 @@ public class FileManagementController {
     @PostMapping(path = "create-folder")
     @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
     ResponseEntity<Map<String,Object>> createFolder(Principal principal,
-                                                    @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
                                                     @Valid  @RequestBody CreateFolderRequest folderRequest) throws Exception {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFolder(principal.getName(),folderRequest)));
     }
@@ -131,8 +131,14 @@ public class FileManagementController {
     @PostMapping(path = "create-file",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
     ResponseEntity<Map<String,Object>> createFile(Principal principal,
-                                                  @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
                                                   @Valid  @RequestPart("info") CreateFileRequest fileRequest,@RequestPart("file") MultipartFile file) throws Exception {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFile(principal.getName(),fileRequest,file)));
+    }
+
+    @PostMapping(path = "content/create-file",consumes = {MediaType.APPLICATION_JSON_VALUE})
+    @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
+    ResponseEntity<Map<String,Object>> createFileFromContent(Principal principal,
+                                                             @Valid  @RequestPart("info") CreateFileFromContentRequest fileRequest) throws Exception {
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFileFromContent(principal.getName(),fileRequest)));
     }
 }

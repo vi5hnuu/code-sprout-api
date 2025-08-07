@@ -219,6 +219,46 @@ public class FileManagementService {
         return fileToDto(savedFile);
     }
 
+    @Transactional(readOnly = false)
+    public FileDto createFileFromContent(String ownerId, CreateFileFromContentRequest createFileFromContentRequest) throws Exception {
+        final var fileName=createFileFromContentRequest.getFileName();
+        if (fileName==null || !fileName.endsWith(".md")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,"fileName must end with md");
+        }
+
+        if(createFileFromContentRequest.getContent()==null){
+            throw new ApiException(HttpStatus.BAD_REQUEST,"file content cannot be empty");
+        }
+
+        final var fileExists=fileRepository.existsByOwnerIdAndFolderIdAndName(ownerId,createFileFromContentRequest.getFolderId(), fileName);
+        if(fileExists) throw new ApiException(HttpStatus.BAD_REQUEST,"file with same name cannot be created.");
+
+        final var file=utilityService.contentToFile(createFileFromContentRequest.getContent(), fileName);
+        final var mimeType=Files.probeContentType(file.toPath());
+
+        try{
+            final var uploadedFile=s3StorageService.uploadFile(file,fileName);
+            final var newFile=File.builder()
+                    .ownerId(ownerId)
+                    .mimeType(mimeType)
+                    .s3Key(fileName)
+                    .fileSize(file.length())
+                    .folderId(createFileFromContentRequest.getFolderId())
+                    .fileExtension(FileExtension.md)
+                    .name(fileName)
+                    .visibility(createFileFromContentRequest.getVisibility())
+                    .build();
+            final var savedFile=fileRepository.save(newFile);
+            return fileToDto(savedFile);
+        }finally {
+            if(file.delete()){
+                log.info("Deleted temporary file");
+            }else {
+                log.warn("File deletion failed");
+            }
+        }
+    }
+
     private String extractExtension(String fileName){
         int lastIndexOfDot = fileName.lastIndexOf('.');
         if(lastIndexOfDot==-1) return "";
