@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -55,6 +56,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {//not required but will save processing for these endpoints
-        return Arrays.stream(SecurityConfig.ENDPOINTS_WHITELIST).anyMatch(endpoint-> new AntPathRequestMatcher(endpoint).matches(request));
+        return request.getMethod().equals(HttpMethod.OPTIONS.name()) || Arrays.stream(SecurityConfig.ENDPOINTS_WHITELIST).anyMatch(endpoint-> new AntPathRequestMatcher(endpoint).matches(request));
     }
 }
