@@ -17,7 +17,7 @@ public class CorsConfig {
         CorsConfiguration configuration=new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of("https://code-sprout.laxmi.solutions"));
-        configuration.setAllowedOrigins(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // Important if using authentication
 
