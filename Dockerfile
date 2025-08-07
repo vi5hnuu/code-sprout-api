@@ -1,37 +1,37 @@
-# --- Stage 1: Build the application ---
-FROM openjdk:21 AS builder
+# ------------------------------------------
+# Stage 1: Build the application
+# ------------------------------------------
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
-WORKDIR /code-sprout-api
+WORKDIR /build
 
-# Copy build files first
-COPY mvnw mvnw
-COPY mvnw.cmd mvnw.cmd
+# Pre-copy POM and wrapper to cache deps first
+COPY pom.xml .
+COPY mvnw .
 COPY .mvn .mvn
-COPY pom.xml pom.xml
 
-# Give permission to mvnw
+# Give executable permission to mvnw
 RUN chmod +x mvnw
 
-# Download dependencies (cached if pom.xml unchanged)
+# Download dependencies first (cache-friendly)
 RUN ./mvnw dependency:go-offline
 
-# Now copy source code
+# Copy rest of the source code
 COPY src src
 
-# Package the application
-RUN ./mvnw package -DskipTests
+# Build the application (skip tests)
+RUN ./mvnw clean package -DskipTests
 
-# --- Stage 2: Create the minimal runtime image ---
-FROM openjdk:21
+# ------------------------------------------
+# Stage 2: Run the application
+# ------------------------------------------
+FROM eclipse-temurin:21-jre
 
-WORKDIR /code-sprout-api
+WORKDIR /app
 
-# Only copy the final jar from builder stage
-COPY --from=builder /code-sprout-api/target/code-sprout-api.jar app.jar
+# Copy only the final built JAR from builder
+COPY --from=builder /build/target/code-sprout-api.jar .
 
 EXPOSE 9093
 
-# Start the application
-CMD ["java", "-jar", "app.jar"]
-
-#docker run --env-file .env -p 9093:9093 code-sprout-api
+CMD ["java", "-jar", "code-sprout-api.jar"]
