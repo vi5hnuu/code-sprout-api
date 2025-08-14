@@ -20,6 +20,8 @@ public class FileDto implements FSItemDto {
     private String mimeType;
     private String s3Key;
     private Long fileSize;//in bytes
+
+    @Builder.Default()
     private Visibility visibility = Visibility.PRIVATE;
     private Timestamp createdAt;
     private Timestamp updatedAt;

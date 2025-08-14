@@ -22,6 +22,8 @@ public class CreateFolderRequest {
     @NotBlank
     private String name;
     private String description;
+
+    @Builder.Default()
     private Visibility visibility=Visibility.PRIVATE;
     private String parentId;
     private String password;

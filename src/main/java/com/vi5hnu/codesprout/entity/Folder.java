@@ -56,6 +56,7 @@ public class Folder {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 10)
+    @Builder.Default()
     private Visibility visibility = Visibility.PRIVATE;
 
     @PrePersist
