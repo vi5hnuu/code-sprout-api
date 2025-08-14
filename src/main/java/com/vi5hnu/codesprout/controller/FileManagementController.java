@@ -34,13 +34,23 @@ public class FileManagementController {
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @RequestParam(name = "parentId",required = false) String parentId,
+            @RequestParam(name = "onlyFolders",required = false) Boolean onlyFolders,
+            @RequestParam(name = "onlyFiles",required = false) Boolean onlyFiles,
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
-            @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws ApiException {
+            @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws Exception {
         if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
             final var user=userService.validateUser(sourceUserId);
         }
+        if(onlyFolders==null) onlyFolders=false;
+        if(onlyFiles==null) onlyFiles=false;
         final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getListing(ownerId,parentId,pageNo,pageSize)));
+        if((onlyFolders && onlyFiles) || (!onlyFolders && !onlyFiles)){
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getListing(ownerId,parentId,pageNo,pageSize)));
+        }else if(onlyFiles){
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,parentId,pageNo,pageSize)));
+        }else{
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolders(ownerId,parentId,pageNo,pageSize)));
+        }
     }
 
     @GetMapping(path = "folders")

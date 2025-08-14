@@ -172,6 +172,7 @@ public class FileManagementService {
                 .name(createFolderRequest.getName())
                 .description(createFolderRequest.getDescription())
                 .parentId(createFolderRequest.getParentId())
+                .visibility(createFolderRequest.getVisibility()!=null ? createFolderRequest.getVisibility():Visibility.PRIVATE)
                 .password(createFolderRequest.getPassword())
                 .build();
         final var savedFolder=folderRepository.saveAndFlush(newFolder);
