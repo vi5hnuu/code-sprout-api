@@ -189,6 +189,11 @@ public class FileManagementService {
 
         final var extensionMapping=Constants.allowedExtensions.get(extension.getValue());
         if(extensionMapping==null) throw new ApiException(HttpStatus.BAD_REQUEST,"file type not supported");
+
+        if(createFileRequest.getFolderId()!=null && !folderRepository.existsByOwnerIdAndId(ownerId, createFileRequest.getFolderId())){
+            throw new ApiException(HttpStatus.BAD_REQUEST,"folder does not exists");
+        }
+
         final var fileExists=fileRepository.existsByOwnerIdAndFolderIdAndName(ownerId,createFileRequest.getFolderId(),key);
         if(fileExists) throw new ApiException(HttpStatus.BAD_REQUEST,"file with same name cannot be created.");
 
@@ -229,6 +234,10 @@ public class FileManagementService {
 
         if(createFileFromContentRequest.getContent()==null){
             throw new ApiException(HttpStatus.BAD_REQUEST,"file content cannot be empty");
+        }
+
+        if(createFileFromContentRequest.getFolderId()!=null && !folderRepository.existsByOwnerIdAndId(ownerId, createFileFromContentRequest.getFolderId())){
+            throw new ApiException(HttpStatus.BAD_REQUEST,"folder does not exists");
         }
 
         final var fileExists=fileRepository.existsByOwnerIdAndFolderIdAndName(ownerId,createFileFromContentRequest.getFolderId(), fileName);

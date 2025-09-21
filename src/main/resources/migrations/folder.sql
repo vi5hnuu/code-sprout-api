@@ -13,7 +13,7 @@ CREATE TABLE folder (
     INDEX idx_owner_parent (owner_id, parent_id),
     INDEX idx_owner_folder_name (owner_id, name),
     INDEX idx_owner (owner_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE file (
     id VARCHAR(32) PRIMARY KEY,
@@ -32,4 +32,4 @@ CREATE TABLE file (
     CONSTRAINT fk_files_folder FOREIGN KEY (folder_id) REFERENCES folder(id)  ON DELETE RESTRICT,  -- Prevent folder deletion if it contains any files
     INDEX idx_owner_folder (owner_id, folder_id),
     INDEX idx_s3_key (s3_key)  -- Index added for quick lookups by S3 key
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

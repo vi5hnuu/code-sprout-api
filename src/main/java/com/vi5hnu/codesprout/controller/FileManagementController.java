@@ -145,10 +145,10 @@ public class FileManagementController {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFile(principal.getName(),fileRequest,file)));
     }
 
-    @PostMapping(path = "content/create-file",consumes = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(path = "content/create-file")
     @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
     ResponseEntity<Map<String,Object>> createFileFromContent(Principal principal,
-                                                             @Valid  @RequestPart("info") CreateFileFromContentRequest fileRequest) throws Exception {
+                                                             @Valid  @RequestBody CreateFileFromContentRequest fileRequest) throws Exception {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFileFromContent(principal.getName(),fileRequest)));
     }
 }
