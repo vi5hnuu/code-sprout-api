@@ -10,6 +10,8 @@ import lombok.*;
 @NoArgsConstructor
 public class CreateFileFromContentRequest {
     private String folderId;
+    private Boolean replaceIfExists;
+
     @NotNull(message = "content cannot be null")
     private String content;
 

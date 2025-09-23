@@ -240,26 +240,35 @@ public class FileManagementService {
             throw new ApiException(HttpStatus.BAD_REQUEST,"folder does not exists");
         }
 
-        final var fileExists=fileRepository.existsByOwnerIdAndFolderIdAndName(ownerId,createFileFromContentRequest.getFolderId(), fileName);
-        if(fileExists) throw new ApiException(HttpStatus.BAD_REQUEST,"file with same name cannot be created.");
+        final var allowOverrider=createFileFromContentRequest.getReplaceIfExists()!=null && createFileFromContentRequest.getReplaceIfExists().equals(Boolean.TRUE);
+        final var fileExists=fileRepository.findByOwnerIdAndFolderIdAndName(ownerId,createFileFromContentRequest.getFolderId(), fileName);
+        if(!allowOverrider && fileExists.isPresent()) throw new ApiException(HttpStatus.BAD_REQUEST,"file with same name cannot be created.");
 
         final var file=utilityService.contentToFile(createFileFromContentRequest.getContent(), fileName);
         final var mimeType=Files.probeContentType(file.toPath());
 
         try{
             final var uploadedFile=s3StorageService.uploadFile(file,fileName);
-            final var newFile=File.builder()
-                    .ownerId(ownerId)
-                    .mimeType(mimeType)
-                    .s3Key(fileName)
-                    .fileSize(file.length())
-                    .folderId(createFileFromContentRequest.getFolderId())
-                    .fileExtension(FileExtension.md)
-                    .name(fileName)
-                    .visibility(createFileFromContentRequest.getVisibility())
-                    .build();
-            final var savedFile=fileRepository.save(newFile);
-            return fileToDto(savedFile);
+            if(fileExists.isPresent()){
+                final var exFile=fileExists.get();
+                exFile.setFileSize(file.length());
+                exFile.setFolderId(createFileFromContentRequest.getFolderId());
+                final var savedFile=fileRepository.save(exFile);
+                return fileToDto(savedFile);
+            }else{
+                final var newFile=File.builder()
+                        .ownerId(ownerId)
+                        .mimeType(mimeType)
+                        .s3Key(fileName)
+                        .fileSize(file.length())
+                        .folderId(createFileFromContentRequest.getFolderId())
+                        .fileExtension(FileExtension.md)
+                        .name(fileName)
+                        .visibility(createFileFromContentRequest.getVisibility())
+                        .build();
+                final var savedFile=fileRepository.save(newFile);
+                return fileToDto(savedFile);
+            }
         }finally {
             if(file.delete()){
                 log.info("Deleted temporary file");
