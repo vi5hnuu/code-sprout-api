@@ -16,6 +16,7 @@ import java.util.Optional;
 @Repository
 public interface FileRepository extends JpaRepository<File, String>, JpaSpecificationExecutor<File> {
     Page<File> findAllByOwnerIdAndFolderId(String ownerId, String folderId, Pageable pageable);
+    List<File> findAllByOwnerIdAndFolderId(String ownerId, String folderId);
     Optional<File> findByOwnerIdAndFolderIdAndId(String ownerId, String folderId, String fileId);
     Optional<File> findByOwnerIdAndFolderIdAndName(String ownerId, String folderId, String fileName);
     Optional<File> findByOwnerIdAndId(String ownerId, String fileId);

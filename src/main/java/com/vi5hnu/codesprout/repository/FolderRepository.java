@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -14,6 +15,7 @@ public interface FolderRepository extends JpaRepository<Folder, String>, JpaSpec
 
     Page<Folder> findAllByOwnerId(String ownerId, Pageable pageable);
     Page<Folder> findAllByOwnerIdAndParentId(String ownerId, String pId, Pageable pageable);
+    List<Folder> findAllByOwnerIdAndParentId(String ownerId, String pId);
     Optional<Folder> findByOwnerIdAndName(String ownerId, String name);
     Optional<Folder> findByOwnerIdAndId(String ownerId, String id);
 

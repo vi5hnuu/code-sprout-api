@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -34,6 +35,20 @@ public class S3StorageService {
         this.primaryS3Client = primaryS3Client;
         this.secondaryS3Client = secondaryS3Client;
         this.awsS3Properties=awsS3Properties;
+    }
+
+    public Boolean deleteObject(@NotNull String key) {
+        try {
+            final var deleteResponse=primaryS3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(awsS3Properties.getPrimary().getBucketName())
+                    .key(key)
+                    .build());
+            return true;
+        } catch (S3Exception e) {
+            // log the exception if needed
+            System.err.println("Failed to delete S3 object: " + e.awsErrorDetails().errorMessage());
+            return false;
+        }
     }
 
     public String uploadFile(File file, @NotNull String key) throws IOException {

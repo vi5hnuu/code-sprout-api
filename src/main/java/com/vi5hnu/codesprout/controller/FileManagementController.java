@@ -145,6 +145,20 @@ public class FileManagementController {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFile(principal.getName(),fileRequest,file)));
     }
 
+    @PostMapping(path = "delete-file/{fileId}")
+    @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
+    ResponseEntity<Map<String,Object>> deleteFile(Principal principal,@PathVariable("fileId") String fileId,@RequestParam("delete-permanently") Boolean permanentDelete ) throws Exception {
+        this.fileManagementService.deleteFile(principal.getName(),fileId,permanentDelete);
+        return ResponseEntity.status(200).body(Map.of("success",true,"message","file deleted successfully"));
+    }
+
+    @PostMapping(path = "delete-folder/{folderId}")
+    @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
+    ResponseEntity<Map<String,Object>> deleteFolder(Principal principal,@PathVariable("folderId") String folderId,@RequestParam("delete-permanently") Boolean permanentDelete ) throws Exception {
+        this.fileManagementService.deleteFolder(principal.getName(),folderId,permanentDelete);
+        return ResponseEntity.status(200).body(Map.of("success",true,"message","folder deleted successfully"));
+    }
+
     @PostMapping(path = "content/create-file")
     @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
     ResponseEntity<Map<String,Object>> createFileFromContent(Principal principal,

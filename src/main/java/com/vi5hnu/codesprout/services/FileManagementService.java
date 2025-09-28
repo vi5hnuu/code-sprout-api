@@ -225,6 +225,42 @@ public class FileManagementService {
         return fileToDto(savedFile);
     }
 
+    public void deleteFile(String ownerId, String fileId, Boolean permanentDelete) throws ApiException {
+        final var file=fileRepository.findByOwnerIdAndId(ownerId,fileId).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"File not found"));
+        if(permanentDelete!=null && permanentDelete.equals(Boolean.TRUE)){
+            deleteFilePermanently(file);
+        } else{
+            file.setDeleted(true);
+            fileRepository.save(file);
+        }
+    }
+
+    public void deleteFolder(String ownerId, String folderId, Boolean permanentDelete) throws ApiException {
+        final var folder=folderRepository.findByOwnerIdAndId(ownerId,folderId).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"folder not found"));
+        if(permanentDelete!=null && permanentDelete.equals(Boolean.TRUE)){
+            //dangerous -> delete all folders and files in folder
+            deleteFolderPermanently(folder);
+        } else{
+            //just mark folder deleted -> files wont be visible but might be accessible if accessed independently
+            //TODO:: make sure if file folder is soft deleted/file itself is soft deleted -> file cannot be accessed
+            folder.setDeleted(true);
+            folderRepository.save(folder);
+        }
+    }
+
+    public void deleteFilePermanently(File file){
+        s3StorageService.deleteObject(file.getS3Key());
+        fileRepository.delete(file);
+    }
+
+    public void deleteFolderPermanently(final Folder folder){
+        final var nestedFolders=folderRepository.findAllByOwnerIdAndParentId(folder.getOwnerId(), folder.getId());
+        nestedFolders.forEach(this::deleteFolderPermanently);
+        final var files=fileRepository.findAllByOwnerIdAndFolderId(folder.getOwnerId(), folder.getId());
+        files.forEach(this::deleteFilePermanently);
+        folderRepository.delete(folder);
+    }
+
     @Transactional(readOnly = false)
     public FileDto createFileFromContent(String ownerId, CreateFileFromContentRequest createFileFromContentRequest) throws Exception {
         final var fileName=createFileFromContentRequest.getFileName();
