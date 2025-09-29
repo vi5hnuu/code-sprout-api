@@ -62,7 +62,7 @@ public class FileManagementService {
             final var filesPageNo=(pageNo-totalFoldersPages);
             final long skipCount=filesPageNo==0 ? 0 : ((long)totalFoldersPages*limit-totalFolders)+(long)(filesPageNo -1)*limit;
             final long limitCount=filesPageNo==0 ? limit-foldersDto.size() : limit;
-            final var filesPage=this.findFilesBy(ownerId,parentId,skipCount,limitCount,Visibility.PUBLIC,Map.of("name",Sort.Direction.ASC));
+            final var filesPage=this.findFilesBy(ownerId,parentId,skipCount,limitCount,Visibility.PUBLIC,Map.of("name",Sort.Direction.ASC),false);
             final var filesDtos=filesPage.stream().map(this::fileToDto).toList();
 
             List<FSItemDto> combined = new ArrayList<>(foldersDto);
@@ -350,7 +350,7 @@ public class FileManagementService {
     }
 
     @Transactional(readOnly = true)
-    public List<File> findFilesBy(String ownerId, String folderId, @Min(0) long offset, @Min(1) long limit, Visibility visibility, Map<String, Sort.Direction> sort) throws ApiException {
+    public List<File> findFilesBy(String ownerId, String folderId, @Min(0) long offset, @Min(1) long limit, Visibility visibility, Map<String, Sort.Direction> sort,Boolean isDeleted) throws ApiException {
         List<String> allowedSortColumns = List.of("name");
         StringBuilder sql = new StringBuilder(String.format("SELECT * FROM %s WHERE owner_id = :ownerId",File.TABLE_NAME));
 
@@ -358,6 +358,12 @@ public class FileManagementService {
             sql.append(" AND folder_id IS NULL");
         } else {
             sql.append(" AND folder_id = :folderId");
+        }
+
+        if (isDeleted == null) {
+            sql.append(" AND is_deleted = false");
+        } else {
+            sql.append(" AND is_deleted = :isDeleted");
         }
 
         if(visibility!=null){
@@ -379,6 +385,7 @@ public class FileManagementService {
         query.setParameter("ownerId", ownerId);
         if (folderId != null) query.setParameter("folderId", folderId);
         if (visibility != null) query.setParameter("visibility", visibility.name());
+        if (isDeleted != null) query.setParameter("isDeleted", isDeleted);
         query.setParameter("offset", offset);
         query.setParameter("limit", limit);
 
