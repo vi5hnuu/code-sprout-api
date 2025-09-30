@@ -227,6 +227,7 @@ public class FileManagementService {
 
     public void deleteFile(String ownerId, String fileId, Boolean permanentDelete) throws ApiException {
         final var file=fileRepository.findByOwnerIdAndId(ownerId,fileId).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"File not found"));
+        if(file.isDeleted()) throw new ApiException(HttpStatus.NOT_FOUND,"File not found");
         if(permanentDelete!=null && permanentDelete.equals(Boolean.TRUE)){
             deleteFilePermanently(file);
         } else{
@@ -237,14 +238,14 @@ public class FileManagementService {
 
     public void deleteFolder(String ownerId, String folderId, Boolean permanentDelete) throws ApiException {
         final var folder=folderRepository.findByOwnerIdAndId(ownerId,folderId).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"folder not found"));
+        if(folder.isDeleted()) throw new ApiException(HttpStatus.NOT_FOUND,"File not found");
+
         if(permanentDelete!=null && permanentDelete.equals(Boolean.TRUE)){
             //dangerous -> delete all folders and files in folder
             deleteFolderPermanently(folder);
         } else{
-            //just mark folder deleted -> files wont be visible but might be accessible if accessed independently
-            //TODO:: make sure if file folder is soft deleted/file itself is soft deleted -> file cannot be accessed
-            folder.setDeleted(true);
-            folderRepository.save(folder);
+            //just mark folder/nested folder/files deleted
+            softDeleteFolderPermanently(folder);
         }
     }
 
@@ -259,6 +260,16 @@ public class FileManagementService {
         final var files=fileRepository.findAllByOwnerIdAndFolderId(folder.getOwnerId(), folder.getId());
         files.forEach(this::deleteFilePermanently);
         folderRepository.delete(folder);
+    }
+    public void softDeleteFolderPermanently(final Folder folder){
+        final var nestedFolders=folderRepository.findAllByOwnerIdAndParentId(folder.getOwnerId(), folder.getId());
+        nestedFolders.forEach(this::softDeleteFolderPermanently);
+        final var files=fileRepository.findAllByOwnerIdAndFolderId(folder.getOwnerId(), folder.getId());
+        files.forEach((file)->file.setDeleted(true));
+        if(!files.isEmpty()) fileRepository.saveAll(files);
+
+        folder.setDeleted(true);
+        folderRepository.save(folder);
     }
 
     @Transactional(readOnly = false)

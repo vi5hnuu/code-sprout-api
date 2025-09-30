@@ -18,6 +18,8 @@ public interface FolderRepository extends JpaRepository<Folder, String>, JpaSpec
     List<Folder> findAllByOwnerIdAndParentId(String ownerId, String pId);
     Optional<Folder> findByOwnerIdAndName(String ownerId, String name);
     Optional<Folder> findByOwnerIdAndId(String ownerId, String id);
+    Optional<Folder> findByOwnerIdAndIdAndIsDeleted(String ownerId, String id,boolean isDeleted);
+    boolean existsByOwnerIdAndIdAndIsDeleted(String ownerId, String id,boolean isDeleted);
 
     boolean existsByOwnerIdAndId(String ownerId, String folderId);
     boolean existsByOwnerIdAndParentIdAndName(String ownerId, String parentFolderId, String name);
