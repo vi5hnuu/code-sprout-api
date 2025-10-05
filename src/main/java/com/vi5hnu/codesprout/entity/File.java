@@ -1,5 +1,6 @@
 package com.vi5hnu.codesprout.entity;
 
+import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.enums.FileExtension;
 import com.vi5hnu.codesprout.enums.Visibility;
 import jakarta.persistence.*;
@@ -53,6 +54,11 @@ public class File {
     @Column(length = 10)
     @Builder.Default()
     private Visibility visibility = Visibility.PRIVATE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    @Builder.Default()
+    private FileAccess access = FileAccess.PREMIUM;
 
     @Column(name = "is_deleted")
     @Builder.Default

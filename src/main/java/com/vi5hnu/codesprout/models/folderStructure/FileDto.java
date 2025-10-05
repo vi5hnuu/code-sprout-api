@@ -1,5 +1,6 @@
 package com.vi5hnu.codesprout.models.folderStructure;
 
+import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.enums.FileExtension;
 import com.vi5hnu.codesprout.enums.Visibility;
 import lombok.*;
@@ -19,6 +20,7 @@ public class FileDto implements FSItemDto {
     private FileExtension fileExtension;
     private String mimeType;
     private String s3Key;
+    private FileAccess access;
     private Long fileSize;//in bytes
 
     @Builder.Default()

@@ -20,6 +20,7 @@ public interface FileRepository extends JpaRepository<File, String>, JpaSpecific
     Optional<File> findByOwnerIdAndFolderIdAndId(String ownerId, String folderId, String fileId);
     Optional<File> findByOwnerIdAndFolderIdAndName(String ownerId, String folderId, String fileName);
     Optional<File> findByOwnerIdAndId(String ownerId, String fileId);
+    Optional<File> findByIdAndIsDeleted(String fileId, boolean isDeleted);
     Optional<File> findByOwnerIdAndName(String ownerId, String fileName);
     boolean existsByOwnerIdAndFolderIdAndName(String ownerId,String folderId,String name);
     long countByOwnerIdAndFolderId(String ownerId, String folderId);

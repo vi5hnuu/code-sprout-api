@@ -38,7 +38,8 @@ public class SecurityConfig {
             "/api/v1/users/login/google",
             "/api/v1/users/forgot-password",
             "/api/v1/users/reset-password",
-            "/api/v1/leads/**"
+            "/api/v1/leads/**",
+            "api/v1/file-mgmt/open/**"
     };
 
     @Bean

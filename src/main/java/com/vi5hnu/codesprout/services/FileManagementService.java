@@ -3,6 +3,7 @@ package com.vi5hnu.codesprout.services;
 import com.vi5hnu.codesprout.commons.Constants;
 import com.vi5hnu.codesprout.commons.Pageable;
 import com.vi5hnu.codesprout.entity.*;
+import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.enums.FileExtension;
 import com.vi5hnu.codesprout.enums.Visibility;
 import com.vi5hnu.codesprout.exceptions.ApiException;
@@ -145,6 +146,13 @@ public class FileManagementService {
             final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,file.getFolderId(),null,Visibility.PUBLIC,false));
             if(!folderExists) throw new ApiException(HttpStatus.BAD_REQUEST,"Folder does not exists");
         }
+        return fileToDto(file);
+    }
+
+    @Transactional(readOnly = true)
+    public FileDto getFileById(String fileId) throws ApiException {
+        if(fileId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file id");
+        final var file=fileRepository.findByIdAndIsDeleted(fileId,false).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"file not found"));
         return fileToDto(file);
     }
 
@@ -354,6 +362,7 @@ public class FileManagementService {
                 .fileSize(file.getFileSize())
                 .s3Key(file.getS3Key())
                 .mimeType(file.getMimeType())
+                .access(file.getAccess())
                 .visibility(file.getVisibility())
                 .createdAt(file.getCreatedAt())
                 .updatedAt(file.getUpdatedAt())
