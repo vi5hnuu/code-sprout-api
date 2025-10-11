@@ -30,11 +30,11 @@ public class PasswordUpdateCompleteEventListener implements ApplicationListener<
     }
 
     public void sendVerificationEmail(String firstName,String lastName,String userEmail) throws MessagingException, UnsupportedEncodingException {
-        String subject = "Silent Whisper 🤫 - Security Alert";
-        String senderName = "Silent Whisper 🤫";
+        String subject = "Code Sprout 🕉️ - Security Alert";
+        String senderName = "Code Sprout 🕉️";
         String mailContent = "<p> Hi, "+ firstName+" "+ lastName + ", </p>"+
                 "<p>Your password has been changed.</p>"+
-                "<p> Thank you for using Silent Whisper 🤫";
+                "<p> Thank you for using Code Sprout 🕉️";
         MimeMessage message = javaMailSender.createMimeMessage();
         var messageHelper = new MimeMessageHelper(message);
         messageHelper.setFrom("kumarvishnu1619@gmail.com", senderName);

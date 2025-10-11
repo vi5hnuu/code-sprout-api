@@ -32,12 +32,12 @@ public class OtpEventListener implements ApplicationListener<OtpEvent> {
     }
 
     public void sendOtpEmail(String name,String userEmail,String otp) throws MailException, MessagingException, UnsupportedEncodingException {
-        String subject = "Silent Whisper 🤫 - Otp";
-        String senderName = "Silent Whisper 🤫";
+        String subject = "Code Sprout 🕉️ - Otp";
+        String senderName = "Code Sprout 🕉️";
         String mailContent = "<p> Hi, "+ name+", </p>"+
                 "</p>Here is your Otp <strong>"+ otp +"</strong> .</p>"+
                 "The otp is valid only for "+ OtpModel.EXPIRE_AFTER_MINS+" mins"+
-                "<p> Thank you <br> Silent Whisper 🤫";
+                "<p> Thank you <br> Code Sprout 🕉️";
         MimeMessage message = javaMailSender.createMimeMessage();
         var messageHelper = new MimeMessageHelper(message);
         messageHelper.setFrom("kumarvishnu1619@gmail.com", senderName);

@@ -30,11 +30,11 @@ public class AlertEventListener implements ApplicationListener<AlertEvent> {
     }
 
     public void sendVerificationEmail(String name,String userEmail,String alertMessage) throws MailException, MessagingException, UnsupportedEncodingException {
-        String subject = "Silent Whisper 🤫 - Alert";
-        String senderName = "Silent Whisper 🤫";
+        String subject = "Code Sprout 🕉️ - Alert";
+        String senderName = "Code Sprout 🕉️";
         String mailContent = "<p> Hi, "+ name+", </p>"+
                 "<p>"+alertMessage+"</p>"+
-                "<p> Thank you <br> Silent Whisper 🤫";
+                "<p> Thank you <br> Code Sprout 🕉️";
         MimeMessage message = javaMailSender.createMimeMessage();
         var messageHelper = new MimeMessageHelper(message);
         messageHelper.setFrom("kumarvishnu1619@gmail.com", senderName);

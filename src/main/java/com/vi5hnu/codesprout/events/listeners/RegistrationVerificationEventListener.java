@@ -33,13 +33,13 @@ public class RegistrationVerificationEventListener implements ApplicationListene
     }
 
     public void sendVerificationEmail(String url,String firstName,String lastName,String userEmail) throws MailException, MessagingException, UnsupportedEncodingException {
-        String subject = "Silent Whisper 🤫 - Account Verification";
-        String senderName = "Silent Whisper 🤫";
+        String subject = "Code Sprout 🕉️ - Account Verification";
+        String senderName = "Code Sprout 🕉️";
         String mailContent = "<p> Hi, "+ firstName+" "+ lastName + ", </p>"+
-                "<p>Thank you for registering with Silent Whisper 🤫 ,"+"<br>" +
+                "<p>Thank you for registering with Code Sprout 🕉️ ,"+"<br>" +
                 "Please, follow the link below to complete your registration.</p>"+
                 "<a href=\"" +url+ "\">Verify your email to activate your account</a>"+
-                "<p> Thank you <br> Silent Whisper 🤫 User Registration";
+                "<p> Thank you <br> Code Sprout 🕉️ User Registration";
         MimeMessage message = javaMailSender.createMimeMessage();
         var messageHelper = new MimeMessageHelper(message);
         messageHelper.setFrom("kumarvishnu1619@gmail.com", senderName);

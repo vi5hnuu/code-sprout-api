@@ -17,10 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.security.Principal;
 import java.util.Map;
 
-//sourceUserId -> is not passed file will be searched for currently logged in user else from sourceUserId
+//sourceUserId -> is not passed file will be searched for admin user else from sourceUserId
 //only public files of sourceUserId are allowed to be shared
 //sourceUserId must be valid user
-//provided sourceUserId!=currently logged in userId
 
 @RestController
 @RequestMapping(path = "api/v1/file-mgmt")
@@ -40,6 +39,9 @@ public class FileManagementController {
             @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws Exception {
         if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
             final var user=userService.validateUser(sourceUserId);
+        }
+        if(sourceUserId==null){//no need to validate
+            sourceUserId=principal.getName();
         }
         if(onlyFolders==null) onlyFolders=false;
         if(onlyFiles==null) onlyFiles=false;
