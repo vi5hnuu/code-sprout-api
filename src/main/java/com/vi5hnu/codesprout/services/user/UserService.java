@@ -124,4 +124,8 @@ public class UserService{
         final var user=userRepository.findOne(UserSpecifications.activeUserById(sourceUserId)).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"invalid user id"));
         return UserModel.toDto(user);
     }
+
+    public Optional<UserModel> getAdmin() {
+        return this.userRepository.findOne(UserSpecifications.activeUserByUsernameOrEmail("kumarvishnu1619@gmail.com",true,false,false));
+    }
 }
