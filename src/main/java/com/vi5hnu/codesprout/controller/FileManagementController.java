@@ -10,6 +10,7 @@ import com.vi5hnu.codesprout.services.FileManagementService;
 import com.vi5hnu.codesprout.services.user.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,8 @@ public class FileManagementController {
             final var user=userService.validateUser(sourceUserId);
         }
         if(sourceUserId==null){//no need to validate
-            sourceUserId=principal.getName();
+            final var admin=userService.getAdmin().orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"user not found"));
+            sourceUserId=admin.getId();
         }
         if(onlyFolders==null) onlyFolders=false;
         if(onlyFiles==null) onlyFiles=false;
