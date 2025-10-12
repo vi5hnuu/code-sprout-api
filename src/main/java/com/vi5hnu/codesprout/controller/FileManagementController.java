@@ -54,7 +54,7 @@ public class FileManagementController {
         if((onlyFolders && onlyFiles) || (!onlyFolders && !onlyFiles)){
             return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getListing(ownerId,parentId,pageNo,pageSize,Visibility.PUBLIC,List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
         }else if(onlyFiles){
-            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,parentId,pageNo,pageSize, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,parentId,pageNo,pageSize,null, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
         }else{
             return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolders(ownerId,parentId,pageNo,pageSize)));
         }
@@ -102,14 +102,15 @@ public class FileManagementController {
     ResponseEntity<Map<String,Object>> getFiles(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
+            @RequestParam(name = "search",required = false) String search,
             @RequestParam(name = "folderId",required = false) String folderId,
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
             @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws Exception {
         if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
             final var user=userService.validateUser(sourceUserId);
         }
-        final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,folderId,pageNo,pageSize, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
+        final var ownerId=sourceUserId!=null ? sourceUserId:userService.getAdmin().orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"user not found")).getId();
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,folderId,pageNo,pageSize,search, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
     @GetMapping(path = "file/{fileId}")

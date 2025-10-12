@@ -69,6 +69,7 @@ public class FileMgmtSpecification {
             String ownerId,
             String id,
             String name,
+            String search,
             String folderId,
             Visibility visibility,
             List<FileAccess> accesses,
@@ -85,10 +86,15 @@ public class FileMgmtSpecification {
 
             predicates.add(cb.equal(root.get("ownerId"), ownerId));
             if (id != null) predicates.add(cb.equal(root.get("id"), id));
+
             if (name != null) predicates.add(cb.equal(root.get("name"), name));
+            else if (search != null && !search.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("name")), "%" + search.toLowerCase() + "%"));
+            }
+
             if(accesses!=null && !accesses.isEmpty()) predicates.add(root.get("access").in(accesses));
             if (folderId != null) predicates.add(cb.equal(root.get("folderId"), folderId));
-            else predicates.add(cb.isNull(root.get("folderId")));
+            else if(search==null || search.isEmpty()) predicates.add(cb.isNull(root.get("folderId")));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };

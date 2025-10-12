@@ -58,7 +58,7 @@ public class FileManagementService {
         PageRequest folderPageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC, "name")); // Page index is 0-based in Spring Data
         final var foldersPage=folderRepository.findAll(FileMgmtSpecification.getFoldersBy(ownerId,null,null,parentId, visibility,false),folderPageable);
         final var totalFolders=foldersPage.getTotalElements();
-        final var totalFiles=fileRepository.count(FileMgmtSpecification.getFilesBy(ownerId,null,null,parentId,visibility,access,false));
+        final var totalFiles=fileRepository.count(FileMgmtSpecification.getFilesBy(ownerId,null,null,null,parentId,visibility,access,false));
         final var foldersDto=foldersPage.stream().map(this::folderToDto).toList();
         if(foldersDto.size()<limit){//rest are filled by files
             final var totalFoldersPages=foldersPage.getTotalPages();
@@ -99,7 +99,7 @@ public class FileManagementService {
     }
 
     @Transactional(readOnly = true)
-    public Pageable<ExtFile> getFiles(String ownerId, String folderId, @Min(1) int pageNo, @Min(10) int limit, Visibility visibility, List<FileAccess> access) throws Exception {
+    public Pageable<ExtFile> getFiles(String ownerId, String folderId, @Min(1) int pageNo, @Min(10) int limit,String search, Visibility visibility, List<FileAccess> access) throws Exception {
         if(visibility==null) visibility=Visibility.PUBLIC;
         if(access==null) access=List.of();
 
@@ -108,14 +108,14 @@ public class FileManagementService {
             if(!folderExists) throw new Exception("Folder does not exists");
         }
         PageRequest pageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC,"name")); // Page index is 0-based in Spring Data
-        final var files=fileRepository.findAll(FileMgmtSpecification.getFilesBy(ownerId,folderId,null,folderId,visibility,access,false),pageable);
+        final var files=fileRepository.findAll(FileMgmtSpecification.getFilesBy(ownerId,folderId,null,search,folderId,visibility,access,false),pageable);
         return new Pageable<>(files.get().map(ExtFile::fromFile).toList(),pageNo,files.getTotalElements());
     }
 
     @Transactional(readOnly = true)
     public ExtFile getFileById(String ownerId, String folderId, String fileId, Visibility visibility, List<FileAccess> access) throws Exception {
         if(fileId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file id");
-        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,folderId,visibility,access,false)).orElse(null);
+        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,null,folderId,visibility,access,false)).orElse(null);
         if(file==null) return null;
 
 
@@ -129,7 +129,7 @@ public class FileManagementService {
     @Transactional(readOnly = true)
     public ExtFile getFileByName(String ownerId, String folderId, String name, Visibility visibility, List<FileAccess> access) throws Exception {
         if(name==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file name");
-        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,null,name,folderId,visibility,access,false)).orElse(null);
+        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,null,name,null,folderId,visibility,access,false)).orElse(null);
         if(file==null) return null;
 
 
