@@ -2,6 +2,7 @@ package com.vi5hnu.codesprout.specifications;
 
 import com.vi5hnu.codesprout.entity.File;
 import com.vi5hnu.codesprout.entity.Folder;
+import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.enums.Visibility;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -70,6 +71,7 @@ public class FileMgmtSpecification {
             String name,
             String folderId,
             Visibility visibility,
+            List<FileAccess> accesses,
             Boolean isDeleted
     ) {
         return (Root<File> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
@@ -84,7 +86,7 @@ public class FileMgmtSpecification {
             predicates.add(cb.equal(root.get("ownerId"), ownerId));
             if (id != null) predicates.add(cb.equal(root.get("id"), id));
             if (name != null) predicates.add(cb.equal(root.get("name"), name));
-
+            if(accesses!=null && !accesses.isEmpty()) predicates.add(root.get("access").in(accesses));
             if (folderId != null) predicates.add(cb.equal(root.get("folderId"), folderId));
             else predicates.add(cb.isNull(root.get("folderId")));
 

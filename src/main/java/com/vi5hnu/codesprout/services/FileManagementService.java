@@ -9,13 +9,14 @@ import com.vi5hnu.codesprout.enums.Visibility;
 import com.vi5hnu.codesprout.exceptions.ApiException;
 import com.vi5hnu.codesprout.models.*;
 import com.vi5hnu.codesprout.models.folderStructure.FSItemDto;
-import com.vi5hnu.codesprout.models.folderStructure.FileDto;
+import com.vi5hnu.codesprout.models.folderStructure.ExtFile;
 import com.vi5hnu.codesprout.models.folderStructure.FolderDto;
 import com.vi5hnu.codesprout.repository.*;
 import com.vi5hnu.codesprout.specifications.FileMgmtSpecification;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /*
  * if folder is private -> cannot fetch folder/files even if they are public
@@ -51,20 +53,20 @@ public class FileManagementService {
     private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
-    public Pageable<? extends FSItemDto> getListing(String ownerId, String parentId, @Min(1) int pageNo, @Min(10) int limit) throws ApiException {
-        if(parentId!=null && !folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,parentId,null,Visibility.PUBLIC,false))) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid folder id");
+    public Pageable<? extends FSItemDto> getListing(String ownerId, String parentId, @Min(1) int pageNo, @Min(10) int limit,Visibility visibility,List<FileAccess> access) throws ApiException {
+        if(parentId!=null && !folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,parentId,null,visibility,false))) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid folder id");
         PageRequest folderPageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC, "name")); // Page index is 0-based in Spring Data
-        final var foldersPage=folderRepository.findAll(FileMgmtSpecification.getFoldersBy(ownerId,null,null,parentId, Visibility.PUBLIC,false),folderPageable);
+        final var foldersPage=folderRepository.findAll(FileMgmtSpecification.getFoldersBy(ownerId,null,null,parentId, visibility,false),folderPageable);
         final var totalFolders=foldersPage.getTotalElements();
-        final var totalFiles=fileRepository.count(FileMgmtSpecification.getFilesBy(ownerId,null,null,parentId,Visibility.PUBLIC,false));
+        final var totalFiles=fileRepository.count(FileMgmtSpecification.getFilesBy(ownerId,null,null,parentId,visibility,access,false));
         final var foldersDto=foldersPage.stream().map(this::folderToDto).toList();
         if(foldersDto.size()<limit){//rest are filled by files
             final var totalFoldersPages=foldersPage.getTotalPages();
             final var filesPageNo=(pageNo-totalFoldersPages);
             final long skipCount=filesPageNo==0 ? 0 : ((long)totalFoldersPages*limit-totalFolders)+(long)(filesPageNo -1)*limit;
             final long limitCount=filesPageNo==0 ? limit-foldersDto.size() : limit;
-            final var filesPage=this.findFilesBy(ownerId,parentId,skipCount,limitCount,Visibility.PUBLIC,Map.of("name",Sort.Direction.ASC),false);
-            final var filesDtos=filesPage.stream().map(this::fileToDto).toList();
+            final var filesPage=this.findFilesBy(ownerId,parentId,skipCount,limitCount,visibility,access,Map.of("name",Sort.Direction.ASC),false);
+            final var filesDtos=filesPage.stream().map(ExtFile::fromFile).toList();
 
             List<FSItemDto> combined = new ArrayList<>(foldersDto);
             combined.addAll(filesDtos);
@@ -97,20 +99,23 @@ public class FileManagementService {
     }
 
     @Transactional(readOnly = true)
-    public Pageable<FileDto> getFiles(String ownerId, String folderId, @Min(1) int pageNo, @Min(10) int limit) throws Exception {
+    public Pageable<ExtFile> getFiles(String ownerId, String folderId, @Min(1) int pageNo, @Min(10) int limit, Visibility visibility, List<FileAccess> access) throws Exception {
+        if(visibility==null) visibility=Visibility.PUBLIC;
+        if(access==null) access=List.of();
+
         if(folderId!=null){
-            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,Visibility.PUBLIC,false));
+            final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,visibility,false));
             if(!folderExists) throw new Exception("Folder does not exists");
         }
         PageRequest pageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC,"name")); // Page index is 0-based in Spring Data
-        final var files=fileRepository.findAll(FileMgmtSpecification.getFilesBy(ownerId,folderId,null,folderId,Visibility.PUBLIC,false),pageable);
-        return new Pageable<>(files.get().map(this::fileToDto).toList(),pageNo,files.getTotalElements());
+        final var files=fileRepository.findAll(FileMgmtSpecification.getFilesBy(ownerId,folderId,null,folderId,visibility,access,false),pageable);
+        return new Pageable<>(files.get().map(ExtFile::fromFile).toList(),pageNo,files.getTotalElements());
     }
 
     @Transactional(readOnly = true)
-    public FileDto getFileById(String ownerId,String folderId,String fileId) throws Exception {
+    public ExtFile getFileById(String ownerId, String folderId, String fileId, Visibility visibility, List<FileAccess> access) throws Exception {
         if(fileId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file id");
-        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,folderId,Visibility.PUBLIC,false)).orElse(null);
+        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,folderId,visibility,access,false)).orElse(null);
         if(file==null) return null;
 
 
@@ -118,13 +123,13 @@ public class FileManagementService {
             final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,Visibility.PUBLIC,false));
             if(!folderExists) throw new Exception("Folder does not exists");
         }
-        return fileToDto(file);
+        return ExtFile.fromFile(file);
     }
 
     @Transactional(readOnly = true)
-    public FileDto getFileByName(String ownerId,String folderId,String name) throws Exception {
+    public ExtFile getFileByName(String ownerId, String folderId, String name, Visibility visibility, List<FileAccess> access) throws Exception {
         if(name==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file name");
-        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,null,name,folderId,Visibility.PUBLIC,false)).orElse(null);
+        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,null,name,folderId,visibility,access,false)).orElse(null);
         if(file==null) return null;
 
 
@@ -132,11 +137,11 @@ public class FileManagementService {
             final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,folderId,null,Visibility.PUBLIC,false));
             if(!folderExists) throw new Exception("Folder does not exists");
         }
-        return fileToDto(file);
+        return ExtFile.fromFile(file);
     }
 
     @Transactional(readOnly = true)
-    public FileDto getFileById(String ownerId,String fileId) throws ApiException {
+    public ExtFile getFileById(String ownerId, String fileId) throws ApiException {
         if(fileId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file id");
         final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,Visibility.PUBLIC,false)).orElse(null);
         if(file==null) return null;
@@ -146,18 +151,18 @@ public class FileManagementService {
             final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,file.getFolderId(),null,Visibility.PUBLIC,false));
             if(!folderExists) throw new ApiException(HttpStatus.BAD_REQUEST,"Folder does not exists");
         }
-        return fileToDto(file);
+        return ExtFile.fromFile(file);
     }
 
     @Transactional(readOnly = true)
-    public FileDto getFileById(String fileId) throws ApiException {
+    public ExtFile getFileById(String fileId) throws ApiException {
         if(fileId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file id");
         final var file=fileRepository.findByIdAndIsDeleted(fileId,false).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"file not found"));
-        return fileToDto(file);
+        return ExtFile.fromFile(file);
     }
 
     @Transactional(readOnly = true)
-    public FileDto getFileByName(String ownerId,String name) throws ApiException {
+    public ExtFile getFileByName(String ownerId, String name) throws ApiException {
         if(name==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file name");
         final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,null,name,Visibility.PUBLIC,false)).orElse(null);
         if(file==null) return null;
@@ -167,7 +172,7 @@ public class FileManagementService {
             final var folderExists=folderRepository.exists(FileMgmtSpecification.getFoldersBy(ownerId,file.getFolderId(),null,Visibility.PUBLIC,false));
             if(!folderExists) throw new ApiException(HttpStatus.BAD_REQUEST,"Folder does not exists");
         }
-        return fileToDto(file);
+        return ExtFile.fromFile(file);
     }
 
     @Transactional(readOnly = false)
@@ -188,7 +193,7 @@ public class FileManagementService {
     }
 
     @Transactional(readOnly = false)
-    public FileDto createFile(String ownerId, CreateFileRequest createFileRequest,MultipartFile multipartFile) throws Exception {
+    public ExtFile createFile(String ownerId, CreateFileRequest createFileRequest, MultipartFile multipartFile) throws Exception {
         final var originalFileName=multipartFile.getOriginalFilename();
         if(originalFileName==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file name");
         final var extension= FileExtension.fromValue(extractExtension(originalFileName));
@@ -227,10 +232,11 @@ public class FileManagementService {
                 .folderId(createFileRequest.getFolderId())
                 .fileExtension(extension)
                 .name(key)
+                .access(createFileRequest.getAccess())
                 .visibility(createFileRequest.getVisibility())
                 .build();
         final var savedFile=fileRepository.save(newFile);
-        return fileToDto(savedFile);
+        return ExtFile.fromFile(savedFile);
     }
 
     public void deleteFile(String ownerId, String fileId, Boolean permanentDelete) throws ApiException {
@@ -281,7 +287,7 @@ public class FileManagementService {
     }
 
     @Transactional(readOnly = false)
-    public FileDto createFileFromContent(String ownerId, CreateFileFromContentRequest createFileFromContentRequest) throws Exception {
+    public ExtFile createFileFromContent(String ownerId, CreateFileFromContentRequest createFileFromContentRequest) throws Exception {
         final var fileName=createFileFromContentRequest.getFileName();
         if (fileName==null || !fileName.endsWith(".md")) {
             throw new ApiException(HttpStatus.BAD_REQUEST,"fileName must end with md");
@@ -309,7 +315,7 @@ public class FileManagementService {
                 exFile.setFileSize(file.length());
                 exFile.setFolderId(createFileFromContentRequest.getFolderId());
                 final var savedFile=fileRepository.save(exFile);
-                return fileToDto(savedFile);
+                return ExtFile.fromFile(savedFile);
             }else{
                 final var newFile=File.builder()
                         .ownerId(ownerId)
@@ -322,7 +328,7 @@ public class FileManagementService {
                         .visibility(createFileFromContentRequest.getVisibility())
                         .build();
                 final var savedFile=fileRepository.save(newFile);
-                return fileToDto(savedFile);
+                return ExtFile.fromFile(savedFile);
             }
         }finally {
             if(file.delete()){
@@ -352,42 +358,30 @@ public class FileManagementService {
                 .build();
     }
 
-    private FileDto fileToDto(File file){
-        return FileDto.builder()
-                .id(file.getId())
-                .name(file.getName())
-                .ownerId(file.getOwnerId())
-                .folderId(file.getFolderId())
-                .fileExtension(file.getFileExtension())
-                .fileSize(file.getFileSize())
-                .s3Key(file.getS3Key())
-                .mimeType(file.getMimeType())
-                .access(file.getAccess())
-                .visibility(file.getVisibility())
-                .createdAt(file.getCreatedAt())
-                .updatedAt(file.getUpdatedAt())
-                .build();
-    }
-
     @Transactional(readOnly = true)
-    public List<File> findFilesBy(String ownerId, String folderId, @Min(0) long offset, @Min(1) long limit, Visibility visibility, Map<String, Sort.Direction> sort,Boolean isDeleted) throws ApiException {
+    public List<File> findFilesBy(String ownerId, String folderId, @Min(0) long offset, @Min(1) long limit, Visibility visibility,List<FileAccess> accesses, Map<String, Sort.Direction> sort,Boolean isDeleted) throws ApiException {
+        if(accesses==null) accesses=List.of();
         List<String> allowedSortColumns = List.of("name");
-        StringBuilder sql = new StringBuilder(String.format("SELECT * FROM %s WHERE owner_id = :ownerId",File.TABLE_NAME));
+        StringBuilder sql = new StringBuilder("SELECT t FROM File as t WHERE ownerId = :ownerId");
 
         if (folderId == null) {
-            sql.append(" AND folder_id IS NULL");
+            sql.append(" AND folderId IS NULL");
         } else {
-            sql.append(" AND folder_id = :folderId");
+            sql.append(" AND folderId = :folderId");
         }
 
         if (isDeleted == null) {
-            sql.append(" AND is_deleted = false");
+            sql.append(" AND isDeleted = false");
         } else {
-            sql.append(" AND is_deleted = :isDeleted");
+            sql.append(" AND isDeleted = :isDeleted");
         }
 
         if(visibility!=null){
             sql.append(" AND visibility = :visibility");
+        }
+
+        if(!accesses.isEmpty()){
+            sql.append(" AND access IN (:access)");
         }
 
         if(!sort.isEmpty()){
@@ -401,10 +395,11 @@ public class FileManagementService {
         }
         sql.append(" LIMIT :limit OFFSET :offset");
 
-        Query query = entityManager.createNativeQuery(sql.toString(), File.class);
+        TypedQuery<File> query = entityManager.createQuery(sql.toString(), File.class);
         query.setParameter("ownerId", ownerId);
+        if (!accesses.isEmpty()) query.setParameter("access",accesses);
         if (folderId != null) query.setParameter("folderId", folderId);
-        if (visibility != null) query.setParameter("visibility", visibility.name());
+        if (visibility != null) query.setParameter("visibility", visibility);
         if (isDeleted != null) query.setParameter("isDeleted", isDeleted);
         query.setParameter("offset", offset);
         query.setParameter("limit", limit);

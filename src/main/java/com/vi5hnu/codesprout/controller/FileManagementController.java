@@ -1,6 +1,8 @@
 package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.annotation.RequireUserWith;
+import com.vi5hnu.codesprout.enums.FileAccess;
+import com.vi5hnu.codesprout.enums.Visibility;
 import com.vi5hnu.codesprout.exceptions.ApiException;
 import com.vi5hnu.codesprout.models.CreateFileFromContentRequest;
 import com.vi5hnu.codesprout.models.CreateFileRequest;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 //sourceUserId -> is not passed file will be searched for admin user else from sourceUserId
@@ -49,9 +52,9 @@ public class FileManagementController {
         if(onlyFiles==null) onlyFiles=false;
         final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
         if((onlyFolders && onlyFiles) || (!onlyFolders && !onlyFiles)){
-            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getListing(ownerId,parentId,pageNo,pageSize)));
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getListing(ownerId,parentId,pageNo,pageSize,Visibility.PUBLIC,List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
         }else if(onlyFiles){
-            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,parentId,pageNo,pageSize)));
+            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,parentId,pageNo,pageSize, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
         }else{
             return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolders(ownerId,parentId,pageNo,pageSize)));
         }
@@ -106,7 +109,7 @@ public class FileManagementController {
             final var user=userService.validateUser(sourceUserId);
         }
         final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,folderId,pageNo,pageSize)));
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,folderId,pageNo,pageSize, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
     @GetMapping(path = "file/{fileId}")
@@ -119,7 +122,7 @@ public class FileManagementController {
             final var user=userService.validateUser(sourceUserId);
         }
         final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileById(ownerId,folderId,fileId)));
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileById(ownerId,folderId,fileId, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
     @GetMapping(path = "file/{fileName}")
@@ -132,7 +135,7 @@ public class FileManagementController {
             final var user=userService.validateUser(sourceUserId);
         }
         final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileByName(ownerId,folderId,fileName)));
+        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileByName(ownerId,folderId,fileName,Visibility.PUBLIC,List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
     @PostMapping(path = "create-folder")

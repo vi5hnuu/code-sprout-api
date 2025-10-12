@@ -1,5 +1,6 @@
 package com.vi5hnu.codesprout.models;
 
+import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.enums.Visibility;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -22,4 +23,5 @@ public class CreateFileRequest {
     //this name will override file name in s3 bucket and hence the key
     private String name;//can be null in that case file name is used
     private Visibility visibility = Visibility.PRIVATE;
+    private FileAccess access = FileAccess.PREMIUM;
 }
