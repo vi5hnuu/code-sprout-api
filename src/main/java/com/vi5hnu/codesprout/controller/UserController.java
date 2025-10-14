@@ -1,8 +1,5 @@
 package com.vi5hnu.codesprout.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vi5hnu.codesprout.annotation.RequireUserWith;
 import com.vi5hnu.codesprout.configuration.OAuthClientProperties;
 import com.vi5hnu.codesprout.entity.user.OtpModel;
@@ -19,6 +16,7 @@ import com.vi5hnu.codesprout.services.GoogleService;
 import com.vi5hnu.codesprout.services.JwtService;
 import com.vi5hnu.codesprout.repository.OtpRepository;
 import com.vi5hnu.codesprout.repository.UserRepository;
+import com.vi5hnu.codesprout.services.NotificationService;
 import com.vi5hnu.codesprout.services.user.UserService;
 import com.vi5hnu.codesprout.repository.VerificationTokenRepository;
 import com.vi5hnu.codesprout.specifications.OtpSpecifications;
@@ -30,22 +28,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.SignatureException;
 import java.sql.Timestamp;
@@ -65,7 +56,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final VerificationTokenRepository verificationTokenRepository;
     private final OtpRepository otpRepository;
-    private final ApplicationEventPublisher publisher;
+    private final NotificationService notificationService;
     private final GoogleService googleService;
     private final JwtService jwtService;
     private final OAuthClientProperties oAuthClientProperties;
@@ -109,7 +100,7 @@ public class UserController {
         final OtpModel savedOtp = otpRepository.save(otpModel);
 
         //send email
-        publisher.publishEvent(new PasswordUpdateInit(UserModel.toDto(user),otp));
+        notificationService.passwordUpdateEmail(new PasswordUpdateInit(UserModel.toDto(user),otp));
 
         //send response
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success",true,"message","check your email for otp to verify account."));
@@ -136,7 +127,7 @@ public class UserController {
         httpResponse.addCookie(Utils.generateCookie(jwtToken, jwtExpireMs, "/"));
 
         //security alert
-        publisher.publishEvent(new PasswordUpdateComplete(userModel));
+        notificationService.passwordUpdateComplete(new PasswordUpdateComplete(userModel));
 
         return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("password update for user %s successful.",userModel.getUsername())));
     }
@@ -223,7 +214,7 @@ public class UserController {
                 verificationTokenRepository.save(vtm);
 
                 //send email
-                publisher.publishEvent(new RegistrationVerificationEvent(savedUser,token, this.getVerificationUrl(httpServletRequest)));
+                notificationService.registrationEmail(new RegistrationVerificationEvent(savedUser,token, this.getVerificationUrl(httpServletRequest)));
 
                 //send response
                 return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success",true,"message","check your email to verify account."));
@@ -271,7 +262,7 @@ public class UserController {
         verificationTokenRepository.save(vtm);
 
         //send email
-        publisher.publishEvent(new RegistrationVerificationEvent(userModel,token, this.getVerificationUrl(httpServletRequest)));
+        notificationService.registrationEmail(new RegistrationVerificationEvent(userModel,token, this.getVerificationUrl(httpServletRequest)));
 
         //send response
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success",true,"message","check your email to verify account."));
@@ -305,7 +296,7 @@ public class UserController {
         //send email
         final String verificationUrl= httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":" + httpServletRequest.getServerPort() + "/api/v1/users/verify";
 
-        publisher.publishEvent(new RegistrationVerificationEvent(userModel,token,verificationUrl));
+        notificationService.registrationEmail(new RegistrationVerificationEvent(userModel,token,verificationUrl));
 
         return ResponseEntity.ok(Map.of("success",true,"message","Email Sent!"));
     }
@@ -361,7 +352,7 @@ public class UserController {
         otpRepository.save(otpModel);
 
         //send otp email
-        publisher.publishEvent(new OtpEvent(userModel.getId(),userModel.getFirstName(),userModel.getEmail(),otp));
+        notificationService.otpEmail(new OtpEvent(userModel.getId(),userModel.getFirstName(),userModel.getEmail(),otp));
 
         return ResponseEntity.status(200).body(Map.of("success",true,"message","please enter the otp sent via mail!"));
     }
@@ -392,7 +383,7 @@ public class UserController {
         otpRepository.saveAll(latestActiveUnusedOtp);
 
         //send alert email
-        publisher.publishEvent(new AlertEvent(user.getFirstName(), user.getEmail(), "you password has been changed successfully..."));
+        notificationService.alterEmail(new AlertEvent(user.getFirstName(), user.getEmail(), "you password has been changed successfully..."));
 
         return ResponseEntity.status(200).body(Map.of("success",true,"message","password changed successfully..."));//give option if the owner doesnt changed his password
     }
