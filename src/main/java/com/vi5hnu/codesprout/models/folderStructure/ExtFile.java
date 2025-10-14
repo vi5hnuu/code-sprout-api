@@ -4,6 +4,7 @@ import com.vi5hnu.codesprout.entity.File;
 import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.enums.FileExtension;
 import com.vi5hnu.codesprout.enums.Visibility;
+import com.vi5hnu.codesprout.models.VideoSource;
 import lombok.*;
 
 import java.sql.Timestamp;
@@ -22,6 +23,7 @@ public class ExtFile implements FSItemDto {
     private String mimeType;
     private String s3Key;
     private FileAccess access;
+    private VideoSource videoSource;
     private Long fileSize;//in bytes
 
     @Builder.Default()
@@ -41,6 +43,7 @@ public class ExtFile implements FSItemDto {
                 .mimeType(file.getMimeType())
                 .access(file.getAccess())
                 .visibility(file.getVisibility())
+                .videoSource(file.getVideoSource())
                 .createdAt(file.getCreatedAt())
                 .updatedAt(file.getUpdatedAt())
                 .build();

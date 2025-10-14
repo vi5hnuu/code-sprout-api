@@ -3,9 +3,12 @@ package com.vi5hnu.codesprout.entity;
 import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.enums.FileExtension;
 import com.vi5hnu.codesprout.enums.Visibility;
+import com.vi5hnu.codesprout.models.VideoSource;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.sql.Timestamp;
@@ -46,6 +49,10 @@ public class File {
 
     @Column(name = "s3_key", length = 1024, nullable = false)
     private String s3Key;
+
+    @Type(JsonType.class)
+    @Column(name = "video_source", columnDefinition = "JSON", nullable = false)
+    private VideoSource videoSource;
 
     @Column(name = "file_size", nullable = false)
     private Long fileSize;//in bytes
