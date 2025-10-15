@@ -58,14 +58,14 @@ public class FileManagementService {
         PageRequest folderPageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC, "name")); // Page index is 0-based in Spring Data
         final var foldersPage=folderRepository.findAll(FileMgmtSpecification.getFoldersBy(ownerId,null,null,parentId, visibility,false),folderPageable);
         final var totalFolders=foldersPage.getTotalElements();
-        final var totalFiles=fileRepository.count(FileMgmtSpecification.getFilesBy(ownerId,null,null,null,parentId,visibility,access,false));
+        final var totalFiles=fileRepository.count(FileMgmtSpecification.getFilesBy(ownerId,null,null,null,parentId,visibility,access,false,true));
         final var foldersDto=foldersPage.stream().map(this::folderToDto).toList();
         if(foldersDto.size()<limit){//rest are filled by files
             final var totalFoldersPages=foldersPage.getTotalPages();
             final var filesPageNo=(pageNo-totalFoldersPages);
             final long skipCount=filesPageNo==0 ? 0 : ((long)totalFoldersPages*limit-totalFolders)+(long)(filesPageNo -1)*limit;
             final long limitCount=filesPageNo==0 ? limit-foldersDto.size() : limit;
-            final var filesPage=this.findFilesBy(ownerId,parentId,skipCount,limitCount,visibility,access,Map.of("name",Sort.Direction.ASC),false);
+            final var filesPage=this.findFilesBy(ownerId,parentId,skipCount,limitCount,visibility,access,Map.of("name",Sort.Direction.ASC),false,true);
             final var filesDtos=filesPage.stream().map(ExtFile::fromFile).toList();
 
             List<FSItemDto> combined = new ArrayList<>(foldersDto);
@@ -108,14 +108,14 @@ public class FileManagementService {
             if(!folderExists) throw new Exception("Folder does not exists");
         }
         PageRequest pageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC,"name")); // Page index is 0-based in Spring Data
-        final var files=fileRepository.findAll(FileMgmtSpecification.getFilesBy(ownerId,folderId,null,search,folderId,visibility,access,false),pageable);
+        final var files=fileRepository.findAll(FileMgmtSpecification.getFilesBy(ownerId,folderId,null,search,folderId,visibility,access,false,false),pageable);
         return new Pageable<>(files.get().map(ExtFile::fromFile).toList(),pageNo,files.getTotalElements());
     }
 
     @Transactional(readOnly = true)
     public ExtFile getFileById(String ownerId, String folderId, String fileId, Visibility visibility, List<FileAccess> access) throws Exception {
         if(fileId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file id");
-        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,null,folderId,visibility,access,false)).orElse(null);
+        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,null,folderId,visibility,access,false,false)).orElse(null);
         if(file==null) return null;
 
 
@@ -129,7 +129,7 @@ public class FileManagementService {
     @Transactional(readOnly = true)
     public ExtFile getFileByName(String ownerId, String folderId, String name, Visibility visibility, List<FileAccess> access) throws Exception {
         if(name==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file name");
-        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,null,name,null,folderId,visibility,access,false)).orElse(null);
+        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,null,name,null,folderId,visibility,access,false,false)).orElse(null);
         if(file==null) return null;
 
 
@@ -360,15 +360,15 @@ public class FileManagementService {
     }
 
     @Transactional(readOnly = true)
-    public List<File> findFilesBy(String ownerId, String folderId, @Min(0) long offset, @Min(1) long limit, Visibility visibility,List<FileAccess> accesses, Map<String, Sort.Direction> sort,Boolean isDeleted) throws ApiException {
+    public List<File> findFilesBy(String ownerId, String folderId, @Min(0) long offset, @Min(1) long limit, Visibility visibility,List<FileAccess> accesses, Map<String, Sort.Direction> sort,Boolean isDeleted,Boolean strictFolderId) throws ApiException {
         if(accesses==null) accesses=List.of();
         List<String> allowedSortColumns = List.of("name");
         StringBuilder sql = new StringBuilder("SELECT t FROM File as t WHERE ownerId = :ownerId");
 
-        if (folderId == null) {
-            sql.append(" AND folderId IS NULL");
-        } else {
+        if (folderId != null) {
             sql.append(" AND folderId = :folderId");
+        } else if(strictFolderId!=null && strictFolderId.equals(Boolean.TRUE)) {
+            sql.append(" AND folderId IS NULL");
         }
 
         if (isDeleted == null) {

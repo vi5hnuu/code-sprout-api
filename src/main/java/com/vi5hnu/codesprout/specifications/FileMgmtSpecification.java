@@ -73,7 +73,8 @@ public class FileMgmtSpecification {
             String folderId,
             Visibility visibility,
             List<FileAccess> accesses,
-            Boolean isDeleted
+            Boolean isDeleted,
+            Boolean strictFolderId
     ) {
         return (Root<File> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -94,6 +95,7 @@ public class FileMgmtSpecification {
 
             if(accesses!=null && !accesses.isEmpty()) predicates.add(root.get("access").in(accesses));
             if (folderId != null) predicates.add(cb.equal(root.get("folderId"), folderId));
+            else if((strictFolderId!=null && strictFolderId.equals(Boolean.TRUE))) predicates.add(cb.isNull(root.get("folderId")));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
