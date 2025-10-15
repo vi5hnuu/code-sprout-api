@@ -233,6 +233,7 @@ public class FileManagementService {
                 .fileExtension(extension)
                 .name(key)
                 .access(createFileRequest.getAccess())
+                .videoSource(createFileRequest.getVideoSource())
                 .visibility(createFileRequest.getVisibility())
                 .build();
         final var savedFile=fileRepository.save(newFile);

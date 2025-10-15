@@ -113,7 +113,7 @@ public class FileManagementController {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,folderId,pageNo,pageSize,search, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
-    @GetMapping(path = "file/{fileId}")
+    @GetMapping(path = "file-id/{fileId}")
     ResponseEntity<Map<String,Object>> getFileById(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,

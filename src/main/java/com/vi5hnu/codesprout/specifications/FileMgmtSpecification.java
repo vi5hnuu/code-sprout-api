@@ -94,7 +94,6 @@ public class FileMgmtSpecification {
 
             if(accesses!=null && !accesses.isEmpty()) predicates.add(root.get("access").in(accesses));
             if (folderId != null) predicates.add(cb.equal(root.get("folderId"), folderId));
-            else if(search==null || search.isEmpty()) predicates.add(cb.isNull(root.get("folderId")));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };

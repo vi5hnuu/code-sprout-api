@@ -24,4 +24,5 @@ public class CreateFileRequest {
     private String name;//can be null in that case file name is used
     private Visibility visibility = Visibility.PRIVATE;
     private FileAccess access = FileAccess.PREMIUM;
+    private VideoSource videoSource = new VideoSource();
 }
