@@ -41,13 +41,7 @@ public class FileManagementController {
             @RequestParam(name = "onlyFiles",required = false) Boolean onlyFiles,
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
             @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws Exception {
-        if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
-            final var user=userService.validateUser(sourceUserId);
-        }
-        if(sourceUserId==null){//no need to validate
-            final var admin=userService.getAdmin().orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"user not found"));
-            sourceUserId=admin.getId();
-        }
+        sourceUserId=validateAndGetSourceId(sourceUserId, principal.getName());
         if(onlyFolders==null) onlyFolders=false;
         if(onlyFiles==null) onlyFiles=false;
         final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
@@ -67,10 +61,7 @@ public class FileManagementController {
             @RequestParam(name = "parentId",required = false) String parentId,
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
             @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws ApiException {
-        if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
-            final var user=userService.validateUser(sourceUserId);
-        }
-        final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
+        final var ownerId=validateAndGetSourceId(sourceUserId,principal.getName());
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolders(ownerId,parentId,pageNo,pageSize)));
     }
 
@@ -79,10 +70,7 @@ public class FileManagementController {
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @PathVariable(name = "folderId") String folderId) throws ApiException {
-        if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
-            final var user=userService.validateUser(sourceUserId);
-        }
-        final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
+        final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolderById(ownerId,folderId)));
     }
 
@@ -91,10 +79,7 @@ public class FileManagementController {
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @PathVariable(name = "folderName") String folderName) throws ApiException {
-        if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
-            final var user=userService.validateUser(sourceUserId);
-        }
-        final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
+        final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolderByName(ownerId,folderName)));
     }
 
@@ -106,10 +91,7 @@ public class FileManagementController {
             @RequestParam(name = "folderId",required = false) String folderId,
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
             @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws Exception {
-        if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
-            final var user=userService.validateUser(sourceUserId);
-        }
-        final var ownerId=sourceUserId!=null ? sourceUserId:userService.getAdmin().orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"user not found")).getId();
+        final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,folderId,pageNo,pageSize,search, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
@@ -119,10 +101,7 @@ public class FileManagementController {
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @RequestParam(name = "folderId",required = false) String folderId,
             @PathVariable(name = "fileId") String fileId) throws Exception {
-        if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
-            final var user=userService.validateUser(sourceUserId);
-        }
-        final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
+        final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileById(ownerId,folderId,fileId, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
@@ -132,10 +111,7 @@ public class FileManagementController {
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @RequestParam(name = "folderId",required = false) String folderId,
             @PathVariable(name = "fileName") String fileName) throws Exception {
-        if(sourceUserId!=null && !sourceUserId.equals(principal.getName())){
-            final var user=userService.validateUser(sourceUserId);
-        }
-        final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
+        final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileByName(ownerId,folderId,fileName,Visibility.PUBLIC,List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
@@ -172,5 +148,17 @@ public class FileManagementController {
     ResponseEntity<Map<String,Object>> createFileFromContent(Principal principal,
                                                              @Valid  @RequestBody CreateFileFromContentRequest fileRequest) throws Exception {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFileFromContent(principal.getName(),fileRequest)));
+    }
+
+    private String validateAndGetSourceId(String sourceUserId,String currentUserId) throws ApiException {
+        if(currentUserId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid user id");
+        if(sourceUserId!=null && !sourceUserId.equals(currentUserId)){
+            final var user=userService.validateUser(sourceUserId);
+        }
+        if(sourceUserId==null){//no need to validate
+            final var admin=userService.getAdmin().orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"user not found"));
+            return admin.getId();
+        }
+        return sourceUserId;
     }
 }
