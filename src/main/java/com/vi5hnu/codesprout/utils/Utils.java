@@ -8,10 +8,11 @@ import java.util.UUID;
 public class Utils {
     public static Cookie generateCookie(String jwtToken,int jwtExpireMs,String path){
         final Cookie cookie=new Cookie("jwt", jwtToken);
-//        cookie.setSecure(true);//send via https only
+        cookie.setSecure(true);//send via https only
         cookie.setMaxAge(jwtExpireMs/1000);
         cookie.setHttpOnly(true);//no access via js
         cookie.setPath(path);
+        cookie.setAttribute("SameSite","None");
         cookie.setDomain("");
         return cookie;
     }
