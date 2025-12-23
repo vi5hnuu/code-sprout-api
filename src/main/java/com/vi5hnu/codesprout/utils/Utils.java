@@ -13,7 +13,7 @@ public class Utils {
         cookie.setHttpOnly(true);//no access via js
         cookie.setPath(path);
         cookie.setAttribute("SameSite","None");
-        cookie.setDomain("");
+//        cookie.setDomain("");
         return cookie;
     }
 
