@@ -22,7 +22,7 @@ public class CorsConfig {
         CorsConfiguration configuration=new CorsConfiguration();
 
         if(Arrays.asList(environment.getActiveProfiles()).contains("dev")) configuration.setAllowedOrigins(List.of("http://localhost:3000","http://localhost:4200","http://10.120.240.148:4200"));
-        else configuration.setAllowedOrigins(List.of("https://code-sprout.laxmi.solutions","https://the-code-sprout.laxmi.solutions/"));
+        else configuration.setAllowedOrigins(List.of("https://code-sprout.laxmi.solutions","https://the-code-sprout.laxmi.solutions"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // Important if using authentication
