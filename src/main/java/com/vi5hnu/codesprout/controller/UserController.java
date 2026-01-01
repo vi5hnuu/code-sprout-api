@@ -12,6 +12,7 @@ import com.vi5hnu.codesprout.exceptions.ApiException;
 import com.vi5hnu.codesprout.exceptions.UserAlreadyExistsException;
 import com.vi5hnu.codesprout.models.*;
 import com.vi5hnu.codesprout.repository.UserAuthProviderRepository;
+import com.vi5hnu.codesprout.services.EnvironmentService;
 import com.vi5hnu.codesprout.services.GoogleService;
 import com.vi5hnu.codesprout.services.JwtService;
 import com.vi5hnu.codesprout.repository.OtpRepository;
@@ -62,6 +63,7 @@ public class UserController {
     private final OAuthClientProperties oAuthClientProperties;
     private final WebClient webClient;
     private final OAuthClientProperties authClientProperties;
+    private final EnvironmentService environmentService;
 
     @GetMapping(path = "me")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
@@ -124,7 +126,7 @@ public class UserController {
 
         //renew token
         final String jwtToken=jwtService.generateJwtToken(UserModel.toDto(userModel),jwtExpireMs,jwtSecret);
-        httpResponse.addCookie(Utils.generateCookie(jwtToken, jwtExpireMs, "/"));
+        httpResponse.addCookie(Utils.generateCookie(jwtToken, jwtExpireMs, "/",environmentService.isProd()));
 
         //security alert
         notificationService.passwordUpdateComplete(new PasswordUpdateComplete(userModel));
@@ -150,7 +152,7 @@ public class UserController {
             throw new ApiException(HttpStatus.UNAUTHORIZED,"Invalid username/email/password.");
         }
         final String jwtToken=jwtService.generateJwtToken(UserModel.toDto(userModel),jwtExpireMs,jwtSecret);
-        final var cookie=Utils.generateCookie(jwtToken, jwtExpireMs, "/");
+        final var cookie=Utils.generateCookie(jwtToken, jwtExpireMs, "/",environmentService.isProd());
         httpResponse.addCookie(cookie);
 
         return ResponseEntity.ok(Map.of("success",true,"data",UserModel.toDto(userModel),"message","login success"));
@@ -177,7 +179,7 @@ public class UserController {
                 else if(!user.isEnabled()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account not verified");
 
                 final String jwtToken=jwtService.generateJwtToken(UserModel.toDto(user),jwtExpireMs,jwtSecret);
-                final var cookie=Utils.generateCookie(jwtToken, jwtExpireMs, "/");
+                final var cookie=Utils.generateCookie(jwtToken, jwtExpireMs, "/",environmentService.isProd());
                 httpResponse.addCookie(cookie);
                 return ResponseEntity.ok(Map.of("success",true,"data",UserModel.toDto(user),"message","login success"));
             }
@@ -221,7 +223,7 @@ public class UserController {
             }
 
             final String jwtToken=jwtService.generateJwtToken(UserModel.toDto(savedUser),jwtExpireMs,jwtSecret);
-            final var cookie=Utils.generateCookie(jwtToken, jwtExpireMs, "/");
+            final var cookie=Utils.generateCookie(jwtToken, jwtExpireMs, "/",environmentService.isProd());
             httpResponse.addCookie(cookie);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success",true,"data",UserModel.toDto(savedUser),"message","login success"));
         }catch (SignatureException e){
