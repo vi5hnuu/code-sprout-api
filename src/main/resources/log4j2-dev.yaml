@@ -1,36 +1,65 @@
 Configuration:
-  status: WARN
-  monitorInterval: 30
-  properties:
-    property:
-      - name: LOG_PATH
-        value: ${env:HOME}/logs/myapp
-      - name: LOG_FILE_NAME
-        value: application.log
-      - name: LOG_PATTERN
-        value: "%-5level [%d{yyyy-MM-dd HH:mm:ss,SSS}] [%thread] [%logger{1}]: %msg%n"
+  status: WARN       # Log4j2 internal status — WARN keeps its own bootstrap noise quiet
+  monitorInterval: 30  # Reload config from disk every 30s without restart
 
   appenders:
     Console:
       name: CONSOLE
       target: SYSTEM_OUT
       PatternLayout:
-        pattern: "${LOG_PATTERN}"
+        # %highlight wraps the whole line in ANSI colour based on level.
+        # %logger{36} abbreviates packages to fit in 36 chars:
+        #   com.vi5hnu.codesprout.services.JudgeProxyService → c.v.c.s.JudgeProxyService
+        # %xThrowable{full} prints full nested stack traces explicitly.
+        pattern: "%highlight{%-5level}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=green, DEBUG=cyan, TRACE=white}\
+          \ [%d{HH:mm:ss.SSS}] [%15.15t] %cyan{%logger{36}} - %msg%n%xThrowable{full}"
 
   loggers:
     root:
-      level: debug
-      additivity: false
+      # WARN for all third-party libs — stops Netty/Reactor/Tomcat internal debug flooding
+      level: warn
       AppenderRef:
         - ref: CONSOLE
+
     logger:
-      - name: org.springframework
+      # Your application code — full DEBUG so you see everything in dev
+      - name: com.vi5hnu.codesprout
         level: debug
         additivity: false
         AppenderRef:
           - ref: CONSOLE
-      - name: com.vi5hnu.codesprout
+
+      # Spring Web — INFO shows request mappings and handler resolution
+      - name: org.springframework.web
+        level: info
+        additivity: false
+        AppenderRef:
+          - ref: CONSOLE
+
+      # Spring Security — INFO shows auth/authz decisions without internal spam
+      - name: org.springframework.security
+        level: info
+        additivity: false
+        AppenderRef:
+          - ref: CONSOLE
+
+      # Hibernate SQL — DEBUG shows every generated query in dev
+      - name: org.hibernate.SQL
         level: debug
+        additivity: false
+        AppenderRef:
+          - ref: CONSOLE
+
+      # Hibernate bind parameters — TRACE shows the values bound to ?-parameters
+      - name: org.hibernate.orm.jdbc.bind
+        level: trace
+        additivity: false
+        AppenderRef:
+          - ref: CONSOLE
+
+      # Resilience4j state transitions — useful to see circuit open/close in dev
+      - name: io.github.resilience4j
+        level: info
         additivity: false
         AppenderRef:
           - ref: CONSOLE

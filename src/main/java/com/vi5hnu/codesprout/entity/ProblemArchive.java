@@ -26,6 +26,11 @@ public class ProblemArchive {
 
     @Id
     private String id;
+
+    /** URL-safe identifier used by the frontend for routing (e.g. "two-sum"). */
+    @Column(unique = true, nullable = false)
+    private String slug;
+
     private String title;
     private String description;
 
@@ -45,9 +50,16 @@ public class ProblemArchive {
 
     @PrePersist
     public void assignId() {
-        if(platforms==null) platforms = "[]";
-        if(problemImages==null) problemImages = "[]";
-        if (this.id == null) this.id = (PREFIX + UUID.randomUUID().toString().replace("_","")).substring(0,32);
+        if (platforms == null)     platforms = "[]";
+        if (problemImages == null) problemImages = "[]";
+        if (this.id == null)
+            this.id = (PREFIX + UUID.randomUUID().toString().replace("-", "")).substring(0, 32);
+        // Auto-derive slug from title if not set explicitly
+        if (this.slug == null && this.title != null)
+            this.slug = title.trim().toLowerCase()
+                    .replaceAll("[^a-z0-9\\s-]", "")
+                    .replaceAll("\\s+", "-")
+                    .replaceAll("-+", "-");
     }
 
     public List<ProblemPlatform> getPlatforms() throws JsonProcessingException {

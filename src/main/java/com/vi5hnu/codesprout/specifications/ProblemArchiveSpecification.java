@@ -21,9 +21,21 @@ public class ProblemArchiveSpecification {
     public static Specification<ProblemArchive> hasDifficulty(ProblemDifficulty difficulty) {
         return (Root<ProblemArchive> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) -> {
             if (difficulty == null) {
-                return criteriaBuilder.conjunction(); // No filter if language is null
+                return criteriaBuilder.conjunction();
             }
             return criteriaBuilder.equal(root.get("difficulty"), difficulty);
+        };
+    }
+
+    public static Specification<ProblemArchive> titleContains(String search) {
+        return (Root<ProblemArchive> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) -> {
+            if (search == null || search.isBlank()) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.like(
+                criteriaBuilder.lower(root.get("title")),
+                "%" + search.toLowerCase() + "%"
+            );
         };
     }
 }

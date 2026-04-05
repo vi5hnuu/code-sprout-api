@@ -30,6 +30,7 @@ public class SecurityConfig {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final RequestInfoFilter requestInfoFilter; // Add the filter here
     public static final String[] ENDPOINTS_WHITELIST = {
+            // Auth
             "/api/v1/users/register",
             "/api/v1/users/verify",
             "/api/v1/users/re-verify",
@@ -38,8 +39,12 @@ public class SecurityConfig {
             "/api/v1/users/login/google",
             "/api/v1/users/forgot-password",
             "/api/v1/users/reset-password",
+            // Public APIs
             "/api/v1/leads/**",
-            "api/v1/file-mgmt/open/**"
+            "/api/v1/file-mgmt/open/**",    // fixed: was missing leading /
+            "/api/v1/problem/**",            // problem archive is publicly browsable
+            "/api/v1/tags/**",               // problem tags
+            "/api/v1/tag/**",                // tag → problems lookups
     };
 
     @Bean

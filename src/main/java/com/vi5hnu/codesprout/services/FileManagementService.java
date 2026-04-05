@@ -2,6 +2,7 @@ package com.vi5hnu.codesprout.services;
 
 import com.vi5hnu.codesprout.commons.Constants;
 import com.vi5hnu.codesprout.commons.Pageable;
+import com.vi5hnu.codesprout.configuration.CacheConfig;
 import com.vi5hnu.codesprout.entity.*;
 import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.enums.FileExtension;
@@ -13,6 +14,9 @@ import com.vi5hnu.codesprout.models.folderStructure.ExtFile;
 import com.vi5hnu.codesprout.models.folderStructure.FolderDto;
 import com.vi5hnu.codesprout.repository.*;
 import com.vi5hnu.codesprout.specifications.FileMgmtSpecification;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -75,6 +79,7 @@ public class FileManagementService {
         return new Pageable<>(foldersDto,pageNo,foldersPage.getTotalElements()+totalFiles);
     }
 
+    @Cacheable(value = CacheConfig.FOLDERS_CACHE, key = "#ownerId + '-' + #parentId + '-' + #pageNo + '-' + #limit")
     @Transactional(readOnly = true)
     public Pageable<FolderDto> getFolders(String ownerId,String parentId,@Min(1) int pageNo, @Min(10) int limit) {
         PageRequest pageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC,"name")); // Page index is 0-based in Spring Data
@@ -82,6 +87,7 @@ public class FileManagementService {
         return new Pageable<>(folders.get().map(this::folderToDto).toList(),pageNo,folders.getTotalElements());
     }
 
+    @Cacheable(value = CacheConfig.FOLDERS_CACHE, key = "'by-id-' + #ownerId + '-' + #folderId")
     @Transactional(readOnly = true)
     public FolderDto getFolderById(String ownerId,String folderId) throws ApiException {
         if(folderId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid folder id");
@@ -90,6 +96,7 @@ public class FileManagementService {
         return folderToDto(folder);
     }
 
+    @Cacheable(value = CacheConfig.FOLDERS_CACHE, key = "'by-name-' + #ownerId + '-' + #name")
     @Transactional(readOnly = true)
     public FolderDto getFolderByName(String ownerId,String name) throws ApiException {
         if(name==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid folder name");
@@ -108,7 +115,7 @@ public class FileManagementService {
             if(!folderExists) throw new Exception("Folder does not exists");
         }
         PageRequest pageable = PageRequest.of(pageNo - 1, limit,Sort.by(Sort.Direction.ASC,"name")); // Page index is 0-based in Spring Data
-        final var files=fileRepository.findAll(FileMgmtSpecification.getFilesBy(ownerId,folderId,null,search,folderId,visibility,access,false,false),pageable);
+        final var files=fileRepository.findAll(FileMgmtSpecification.getFilesBy(ownerId,null,null,search,folderId,visibility,access,false,false),pageable);
         return new Pageable<>(files.get().map(ExtFile::fromFile).toList(),pageNo,files.getTotalElements());
     }
 
@@ -175,6 +182,7 @@ public class FileManagementService {
         return ExtFile.fromFile(file);
     }
 
+    @CacheEvict(value = CacheConfig.FOLDERS_CACHE, allEntries = true)
     @Transactional(readOnly = false)
     public FolderDto createFolder(String ownerId, CreateFolderRequest createFolderRequest) throws Exception {
         final var folderExists=folderRepository.existsByOwnerIdAndParentIdAndName(ownerId,createFolderRequest.getParentId(),createFolderRequest.getName());
@@ -251,6 +259,7 @@ public class FileManagementService {
         }
     }
 
+    @CacheEvict(value = CacheConfig.FOLDERS_CACHE, allEntries = true)
     public void deleteFolder(String ownerId, String folderId, Boolean permanentDelete) throws ApiException {
         final var folder=folderRepository.findByOwnerIdAndId(ownerId,folderId).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"folder not found"));
         if(folder.isDeleted()) throw new ApiException(HttpStatus.NOT_FOUND,"File not found");

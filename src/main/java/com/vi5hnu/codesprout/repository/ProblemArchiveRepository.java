@@ -15,6 +15,7 @@ import java.util.Optional;
 public interface ProblemArchiveRepository extends JpaRepository<ProblemArchive, String>  , JpaSpecificationExecutor<ProblemArchive> {
     boolean existsByTitle(String title);
     Optional<ProblemArchive> findByTitle(String title);
+    Optional<ProblemArchive> findBySlug(String slug);
 
     @Query("SELECT pA FROM ProblemArchive pA WHERE pA.id IN :ids")
     List<ProblemArchive> findAllById(@Param("ids") List<String> ids);
