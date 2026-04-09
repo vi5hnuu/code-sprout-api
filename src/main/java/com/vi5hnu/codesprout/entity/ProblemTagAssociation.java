@@ -3,8 +3,6 @@ package com.vi5hnu.codesprout.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Getter
 @Setter
 @AllArgsConstructor
@@ -18,12 +16,9 @@ import java.util.UUID;
         columnNames = {"tag_id", "problem_id"}
     )
 )
-public class ProblemTagAssociation {
+public class ProblemTagAssociation extends BaseDomain {
     public static final String PREFIX     = "PTA";
     public static final String TABLE_NAME = "problem_tag_association";
-
-    @Id
-    private String id;
 
     @Column(name = "tag_id", nullable = false)
     private String tagId;
@@ -32,9 +27,7 @@ public class ProblemTagAssociation {
     private String problemId;
 
     @PrePersist
-    public void assignId() {
-        if (this.id == null) {
-            this.id = (PREFIX + UUID.randomUUID().toString().replace("-", "")).substring(0, 32);
-        }
+    public void prePersist() {
+        initId(PREFIX);
     }
 }

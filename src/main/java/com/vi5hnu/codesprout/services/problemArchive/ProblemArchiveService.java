@@ -31,6 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -305,22 +307,31 @@ public class ProblemArchiveService {
 
     @Transactional
     public List<ProblemTagAssociationDto> addAllProblemsToTag(String tagId, List<String> problemIds) throws Exception {
-        final List<ProblemTagAssociation> problemTagAssociations=new ArrayList<>();
-
-        if(!problemTagRepository.existsById(tagId)){
+        if (!problemTagRepository.existsById(tagId)) {
             throw new Exception("invalid tagId");
         }
-        for (final String problemId : problemIds) {
-            if (!problemArchiveRepository.existsById(problemId)) {
-                throw new Exception("invalid problemId: " + problemId);
-            }
-            // Skip already-linked associations (idempotent)
-            if (!problemTagAssociationRepository.existsByTagIdAndProblemId(tagId, problemId)) {
-                problemTagAssociations.add(
-                        ProblemTagAssociation.builder().tagId(tagId).problemId(problemId).build());
-            }
+
+        // Group check: one query for all IDs instead of N separate existsById calls
+        final Set<String> foundIds = problemArchiveRepository.findAllById(problemIds)
+                .stream()
+                .map(ProblemArchive::getId)
+                .collect(Collectors.toSet());
+
+        final var missingIds = problemIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .toList();
+
+        if (!missingIds.isEmpty()) {
+            throw new Exception("invalid problemId(s): " + missingIds);
         }
-        final var savedAssociations=problemTagAssociationRepository.saveAll(problemTagAssociations);
+
+        // Collect only new associations (idempotent)
+        final List<ProblemTagAssociation> toSave = problemIds.stream()
+                .filter(id -> !problemTagAssociationRepository.existsByTagIdAndProblemId(tagId, id))
+                .map(id -> ProblemTagAssociation.builder().tagId(tagId).problemId(id).build())
+                .toList();
+
+        final var savedAssociations = problemTagAssociationRepository.saveAll(toSave);
         return savedAssociations.stream().map(ProblemTagAssociationDto::new).toList();
     }
 }

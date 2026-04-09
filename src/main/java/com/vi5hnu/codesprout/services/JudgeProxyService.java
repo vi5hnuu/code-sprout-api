@@ -26,12 +26,6 @@ import java.util.concurrent.CompletableFuture;
 @Log4j2
 public class JudgeProxyService {
 
-    private static final Map<ProblemLanguage, String> LANG_MAP = Map.of(
-            ProblemLanguage.JAVASCRIPT, "javascript",
-            ProblemLanguage.CPP,        "cpp",
-            ProblemLanguage.SQL,        "sql"
-    );
-
     private final JudgeConfig judgeConfig;
     private final WebClient   webClient;
 
@@ -129,8 +123,7 @@ public class JudgeProxyService {
 
     private JudgeExecuteRequest buildExecuteRequest(RunCodeRequest req) {
         return JudgeExecuteRequest.builder()
-                .language(LANG_MAP.getOrDefault(req.getLanguage(),
-                        req.getLanguage().getValue().toLowerCase()))
+                .language(req.getLanguage().getJudgeLanguageId())
                 .code(req.getCode())
                 .timeLimitMs(req.getTimeLimitMs() > 0 ? req.getTimeLimitMs() : 5_000)
                 .memLimitMb(req.getMemLimitMb() > 0 ? req.getMemLimitMb() : 256)
