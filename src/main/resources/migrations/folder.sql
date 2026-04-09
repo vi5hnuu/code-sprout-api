@@ -22,7 +22,7 @@ CREATE TABLE file (
     name VARCHAR(255) NOT NULL,
     file_extension VARCHAR(20) CHECK(file_extension in ('txt','md')) NOT NULL,
     mime_type VARCHAR(50) CHECK(mime_type in ('text/plain','text/markdown')) NOT NULL,
-    s3_key VARCHAR(1024) NOT NULL,
+    s3_key VARCHAR(512) NOT NULL,
     file_size BIGINT UNSIGNED NOT NULL, --size in bytes
     visibility ENUM('PUBLIC', 'PRIVATE') DEFAULT 'PRIVATE',
     is_deleted BOOLEAN DEFAULT FALSE,

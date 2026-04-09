@@ -9,50 +9,57 @@ import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Entity()
+@Entity
 @Table(name = ProblemArchive.TABLE_NAME)
-public class ProblemArchive {
-    public final static String PREFIX = "PID";
-    public final static String TABLE_NAME = "problem_archive";
+public class ProblemArchive extends BaseDomain {
+    public static final String PREFIX     = "PID";
+    public static final String TABLE_NAME = "problem_archive";
 
-    @Id
-    private String id;
+    /** URL-safe identifier used by the frontend for routing (e.g. "two-sum"). */
+    @Column(unique = true, nullable = false)
+    private String slug;
+
     private String title;
     private String description;
 
-    @Enumerated(EnumType.STRING) // Ensures the enum is stored as a string in the DB
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProblemLanguage language;
 
-    @Enumerated(EnumType.STRING) // Ensures the enum is stored as a string in the DB
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProblemDifficulty difficulty;
+
     private String platforms;
 
-    @Column(name = "file_path",nullable = false)
+    @Column(name = "file_path", nullable = false)
     private String filePath;
 
     private String problemImages;
 
     @PrePersist
-    public void assignId() {
-        if(platforms==null) platforms = "[]";
-        if(problemImages==null) problemImages = "[]";
-        if (this.id == null) this.id = (PREFIX + UUID.randomUUID().toString().replace("_","")).substring(0,32);
+    public void prePersist() {
+        if (platforms == null)     platforms = "[]";
+        if (problemImages == null) problemImages = "[]";
+        initId(PREFIX);
+        // Auto-derive slug from title if not set explicitly
+        if (this.slug == null && this.title != null) {
+            this.slug = title.trim().toLowerCase()
+                    .replaceAll("[^a-z0-9\\s-]", "")
+                    .replaceAll("\\s+", "-")
+                    .replaceAll("-+", "-");
+        }
     }
 
     public List<ProblemPlatform> getPlatforms() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(this.platforms, new TypeReference<>() {
-        });
+        return objectMapper.readValue(this.platforms, new TypeReference<>() {});
     }
 }

@@ -236,11 +236,12 @@ public class UserController {
         final var user=userRepository.findOne(UserSpecifications.activeUserById(principal.getName())).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"Failed to logout,user not found"));
 
         final Cookie cookie=new Cookie("jwt", null);
-//        cookie.setSecure(true);
+        cookie.setSecure(true);
         cookie.setMaxAge(0);
         cookie.setHttpOnly(true);
-        cookie.setDomain("localhost");
         cookie.setPath("/");
+        cookie.setAttribute("SameSite", "None");
+        if (environmentService.isProd()) cookie.setDomain("laxmi.solutions");
         httpResponse.addCookie(cookie);
         return ResponseEntity.ok(Map.of("success",true,"message",String.format("logout successful - %s",user.getUsername())));
     }

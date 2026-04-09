@@ -1,44 +1,100 @@
 Configuration:
   status: WARN
+
   properties:
     property:
-      - name: LOG_PATH
-        value: ${env:HOME}/logs/myapp
-      - name: LOG_FILE_NAME
-        value: application.log
+      # Override LOG_DIR with -DLOG_DIR=/your/path or LOG_DIR env var.
+      # Defaults to /tmp/logs so it always works without extra setup.
+      - name: LOG_DIR
+        value: "${sys:LOG_DIR:-${env:LOG_DIR:-/tmp/logs}}"
+      - name: APP_NAME
+        value: "code-sprout"
+      # Plain pattern — no ANSI colours; log aggregators (ELK, Datadog, CloudWatch)
+      # parse plain text. %logger{36} abbreviates packages same as dev.
       - name: LOG_PATTERN
-        value: "%-5level [%d{yyyy-MM-dd HH:mm:ss,SSS}] [%thread] [%logger{1}]: %msg%n"
+        value: "%-5level [%d{yyyy-MM-dd HH:mm:ss.SSS}] [%t] %logger{36} - %msg%n%xThrowable{full}"
 
   appenders:
+    # ── Console (stdout) ────────────────────────────────────────────────────────
+    # In containers (K8s, ECS, Cloud Run) stdout IS the log stream.
+    # The node-level log agent (Fluent Bit, CloudWatch agent) reads it from there.
+    Console:
+      name: CONSOLE
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "${LOG_PATTERN}"
+
+    # ── Rolling file (for VM / bare-metal deployments) ──────────────────────────
+    # 50 MB per file, compress on roll, keep 30 days.
+    # In a pure-container setup this can be left in place — it just won't be read.
     RollingFile:
       name: FILE
-      fileName: "${LOG_PATH}/${LOG_FILE_NAME}"
-      filePattern: "${LOG_PATH}/application-%d{yyyy-MM-dd}-%i.log.gz"
+      fileName: "${LOG_DIR}/${APP_NAME}.log"
+      filePattern: "${LOG_DIR}/${APP_NAME}-%d{yyyy-MM-dd}-%i.log.gz"
       PatternLayout:
         pattern: "${LOG_PATTERN}"
       Policies:
         TimeBasedTriggeringPolicy:
-          interval: 1
+          interval: 1       # Roll daily
           modulate: true
         SizeBasedTriggeringPolicy:
-          size: 1GB
+          size: 50MB        # Roll when file hits 50 MB (was 1 GB — too large)
       DefaultRolloverStrategy:
-        max: 30
+        max: 30             # Keep 30 rolled files (~30 days at one per day)
+        compressionLevel: 6
+
+    # ── Async wrappers ───────────────────────────────────────────────────────────
+    # Log statements return immediately; a dedicated background thread drains the
+    # queue to the real appender. Prevents log I/O from adding latency to request
+    # threads under load. bufferSize = ring-buffer slots (power of 2).
+    Async:
+      - name: ASYNC_CONSOLE
+        bufferSize: 4096
+        AppenderRef:
+          ref: CONSOLE
+
+      - name: ASYNC_FILE
+        bufferSize: 4096
+        AppenderRef:
+          ref: FILE
 
   loggers:
     root:
-      level: info
-      additivity: false
+      # WARN for all third-party libs in prod — only unexpected library problems surface
+      level: warn
       AppenderRef:
-        - ref: FILE
+        - ref: ASYNC_CONSOLE
+        - ref: ASYNC_FILE
+
     logger:
-      - name: org.springframework
-        level: info
-        additivity: false
-        AppenderRef:
-          - ref: FILE
+      # Application code at INFO — request lifecycle, business decisions, errors
       - name: com.vi5hnu.codesprout
         level: info
         additivity: false
         AppenderRef:
-          - ref: FILE
+          - ref: ASYNC_CONSOLE
+          - ref: ASYNC_FILE
+
+      # Spring Web at WARN — only unusual routing/MVC errors, not every request
+      - name: org.springframework.web
+        level: warn
+        additivity: false
+        AppenderRef:
+          - ref: ASYNC_CONSOLE
+          - ref: ASYNC_FILE
+
+      # Spring Security at WARN — auth failures already logged at service layer
+      - name: org.springframework.security
+        level: warn
+        additivity: false
+        AppenderRef:
+          - ref: ASYNC_CONSOLE
+          - ref: ASYNC_FILE
+
+      # Resilience4j at INFO — circuit breaker state changes are operationally important
+      - name: io.github.resilience4j
+        level: info
+        additivity: false
+        AppenderRef:
+          - ref: ASYNC_CONSOLE
+          - ref: ASYNC_FILE

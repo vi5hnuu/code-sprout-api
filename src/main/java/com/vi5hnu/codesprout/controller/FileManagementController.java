@@ -74,7 +74,7 @@ public class FileManagementController {
         return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolderById(ownerId,folderId)));
     }
 
-    @GetMapping(path = "folders/{folderName}")
+    @GetMapping(path = "folders/name/{folderName}")
     ResponseEntity<Map<String,Object>> getFolderByName(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,

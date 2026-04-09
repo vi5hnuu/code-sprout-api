@@ -1,6 +1,5 @@
 package com.vi5hnu.codesprout.security.filters;
 
-import com.vi5hnu.codesprout.configuration.SecurityConfig;
 import com.vi5hnu.codesprout.services.JwtService;
 import io.jsonwebtoken.*;
 import jakarta.servlet.FilterChain;
@@ -16,12 +15,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 @Component
 @RequiredArgsConstructor
@@ -55,7 +52,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
     @Override
-    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {//not required but will save processing for these endpoints
-        return request.getMethod().equals(HttpMethod.OPTIONS.name()) || Arrays.stream(SecurityConfig.ENDPOINTS_WHITELIST).anyMatch(endpoint-> new AntPathRequestMatcher(endpoint).matches(request));
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
+        // Only skip OPTIONS preflight — the filter must still run for public endpoints
+        // so that a logged-in user's JWT is processed and principal is available.
+        // permitAll() in SecurityConfig already makes the token optional for those paths;
+        // skipping here entirely means principal is always null, breaking access-level checks.
+        return HttpMethod.OPTIONS.name().equals(request.getMethod());
     }
 }

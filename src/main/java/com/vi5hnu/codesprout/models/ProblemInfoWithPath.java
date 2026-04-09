@@ -21,6 +21,10 @@ import java.util.List;
 public class ProblemInfoWithPath {
     @NotBlank(message = "problem title cannot be blank")
     private String title;
+
+    /** URL-safe slug, e.g. "two-sum". Auto-derived from title if blank. */
+    private String slug;
+
     private String description;
 
     @NotNull(message = "problem language cannot be null")
