@@ -21,7 +21,8 @@ public class RunCodeRequest {
     @NotBlank  private String problemSlug;
     @NotNull   private ProblemLanguage language;
     @NotBlank  private String code;
-    @NotEmpty  private List<RunTestCase> testCases;
+//    @NotEmpty
+    private List<RunTestCase> testCases;
     private String customInput;
     private int timeLimitMs = 5_000;
     private int memLimitMb  = 256;

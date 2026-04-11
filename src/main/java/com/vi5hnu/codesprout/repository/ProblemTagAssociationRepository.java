@@ -11,6 +11,7 @@ import java.util.List;
 
 @Repository
 public interface ProblemTagAssociationRepository extends JpaRepository<ProblemTagAssociation, String> {
+    List<ProblemTagAssociation> findAllByProblemId(String problemId);
     Page<ProblemTagAssociation> findAllByTagId(String tagId, PageRequest pageRequest);
     Page<ProblemTagAssociation> findAllByTagIdIn(List<String> tagIds, PageRequest pageRequest);
     boolean existsByTagIdAndProblemId(String tagId, String problemId);
