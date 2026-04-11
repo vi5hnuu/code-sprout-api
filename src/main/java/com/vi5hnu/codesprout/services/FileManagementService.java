@@ -122,8 +122,7 @@ public class FileManagementService {
     @Transactional(readOnly = true)
     public ExtFile getFileById(String ownerId, String folderId, String fileId, Visibility visibility, List<FileAccess> access) throws Exception {
         if(fileId==null) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid file id");
-        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,null,folderId,visibility,access,false,false)).orElse(null);
-        if(file==null) return null;
+        final var file=fileRepository.findOne(FileMgmtSpecification.getFilesBy(ownerId,fileId,null,null,folderId,visibility,access,false,false)).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"File not found"));
 
 
         if(folderId!=null){
