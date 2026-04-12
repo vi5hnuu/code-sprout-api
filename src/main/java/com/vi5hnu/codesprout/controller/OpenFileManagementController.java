@@ -2,6 +2,7 @@ package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.exceptions.ApiException;
+import com.vi5hnu.codesprout.models.ApiResponse;
 import com.vi5hnu.codesprout.services.FileManagementService;
 import com.vi5hnu.codesprout.services.FileViewService;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.Map;
 
 @RestController
 @RequestMapping(path = "api/v1/file-mgmt/open")
@@ -22,21 +22,20 @@ public class OpenFileManagementController {
     private final FileManagementService fileManagementService;
     private final FileViewService fileViewService;
 
-
     @GetMapping(path = "file/{fileId}")
-    ResponseEntity<Map<String,Object>> getFileById(@PathVariable(name = "fileId") String fileId, Principal principal) throws Exception {
+    ResponseEntity<ApiResponse<Object>> getFileById(@PathVariable(name = "fileId") String fileId, Principal principal) throws Exception {
         final var file = this.fileManagementService.getFileById(fileId);
         checkAccess(file.getAccess(), principal);
         fileViewService.recordView(fileId, principal != null ? principal.getName() : null);
-        return ResponseEntity.status(200).body(Map.of("success", true, "data", file));
+        return ResponseEntity.ok(new ApiResponse<>(true, file));
     }
 
     @GetMapping(path = "file-url/{fileId}")
-    ResponseEntity<Map<String,Object>> getFileUrl(@PathVariable(name = "fileId") String fileId, Principal principal) throws Exception {
+    ResponseEntity<ApiResponse<String>> getFileUrl(@PathVariable(name = "fileId") String fileId, Principal principal) throws Exception {
         final var file = this.fileManagementService.getFileById(fileId);
         checkAccess(file.getAccess(), principal);
         final var fileUrl = String.format("%s/%s", s3BaseUrl, file.getS3Key());
-        return ResponseEntity.status(200).body(Map.of("success", true, "data", fileUrl));
+        return ResponseEntity.ok(new ApiResponse<>(true, fileUrl));
     }
 
     /**

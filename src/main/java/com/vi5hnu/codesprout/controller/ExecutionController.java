@@ -2,6 +2,7 @@ package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.annotation.RateLimit;
 import com.vi5hnu.codesprout.configuration.JudgeConfig;
+import com.vi5hnu.codesprout.models.ApiResponse;
 import com.vi5hnu.codesprout.models.RunCodeRequest;
 import com.vi5hnu.codesprout.models.judge.JudgeJobResponse;
 import com.vi5hnu.codesprout.services.JudgeProxyService;
@@ -11,10 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.concurrent.TimeUnit;
-
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("api/v1/execution")
@@ -66,12 +66,10 @@ public class ExecutionController {
      */
     @GetMapping("/jobs/{jobId}")
     @PreAuthorize("isAuthenticated()")
-    public CompletableFuture<ResponseEntity<Map<String, Object>>> getJob(
+    public CompletableFuture<ResponseEntity<ApiResponse<JudgeJobResponse>>> getJob(
             @PathVariable String jobId) {
 
         return judgeProxyService.getJob(jobId)
-                .thenApply(job ->
-                        ResponseEntity.ok().<Map<String, Object>>body(Map.of("success", true, "data", job))
-                );
+                .thenApply(job -> ResponseEntity.ok(new ApiResponse<>(true, job)));
     }
 }

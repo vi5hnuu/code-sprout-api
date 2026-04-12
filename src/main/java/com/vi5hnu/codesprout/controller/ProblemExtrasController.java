@@ -2,6 +2,7 @@ package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.enums.ProblemDifficulty;
 import com.vi5hnu.codesprout.enums.ProblemLanguage;
+import com.vi5hnu.codesprout.models.ApiResponse;
 import com.vi5hnu.codesprout.services.ProblemHintService;
 import com.vi5hnu.codesprout.services.ProblemOfDayService;
 import com.vi5hnu.codesprout.services.ProblemTemplateService;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -29,104 +30,93 @@ public class ProblemExtrasController {
     // ── Hints ────────────────────────────────────────────────────────────────
 
     @GetMapping("/problem/{problemId}/hints")
-    public ResponseEntity<Map<String, Object>> getHints(@PathVariable String problemId) {
-        return ResponseEntity.ok(Map.of("success", true, "data", hintService.getHints(problemId)));
+    public ResponseEntity<ApiResponse<Object>> getHints(@PathVariable String problemId) {
+        return ResponseEntity.ok(new ApiResponse<>(true, hintService.getHints(problemId)));
     }
 
     @PostMapping("/admin/problem/{problemId}/hints")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> addHint(
+    public ResponseEntity<ApiResponse<Object>> addHint(
             @PathVariable String problemId,
             @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(Map.of("success", true,
-                "data", hintService.addHint(problemId, body.get("content"))));
+        return ResponseEntity.ok(new ApiResponse<>(true, hintService.addHint(problemId, body.get("content"))));
     }
 
     @PutMapping("/admin/hints/{hintId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> updateHint(
+    public ResponseEntity<ApiResponse<Object>> updateHint(
             @PathVariable String hintId,
             @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(Map.of("success", true,
-                "data", hintService.updateHint(hintId, body.get("content"))));
+        return ResponseEntity.ok(new ApiResponse<>(true, hintService.updateHint(hintId, body.get("content"))));
     }
 
     @DeleteMapping("/admin/hints/{hintId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> deleteHint(@PathVariable String hintId) {
+    public ResponseEntity<ApiResponse<Void>> deleteHint(@PathVariable String hintId) {
         hintService.deleteHint(hintId);
-        return ResponseEntity.ok(Map.of("success", true));
+        return ResponseEntity.ok(new ApiResponse<>(true, null));
     }
 
     // ── Templates ────────────────────────────────────────────────────────────
 
     @GetMapping("/problem/{problemId}/templates")
-    public ResponseEntity<Map<String, Object>> getTemplates(@PathVariable String problemId) {
-        return ResponseEntity.ok(Map.of("success", true, "data", templateService.getTemplates(problemId)));
+    public ResponseEntity<ApiResponse<Object>> getTemplates(@PathVariable String problemId) {
+        return ResponseEntity.ok(new ApiResponse<>(true, templateService.getTemplates(problemId)));
     }
 
     @GetMapping("/problem/{problemId}/templates/{language}")
-    public ResponseEntity<Map<String, Object>> getTemplate(
+    public ResponseEntity<ApiResponse<Object>> getTemplate(
             @PathVariable String problemId,
             @PathVariable ProblemLanguage language) {
-        return ResponseEntity.ok(Map.of("success", true,
-                "data", templateService.getTemplate(problemId, language).orElse(null)));
+        return ResponseEntity.ok(new ApiResponse<>(true, templateService.getTemplate(problemId, language).orElse(null)));
     }
 
     @PutMapping("/admin/problem/{problemId}/templates/{language}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> upsertTemplate(
+    public ResponseEntity<ApiResponse<Object>> upsertTemplate(
             @PathVariable String problemId,
             @PathVariable ProblemLanguage language,
             @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(Map.of("success", true,
-                "data", templateService.upsert(problemId, language, body.get("template_code"))));
+        return ResponseEntity.ok(new ApiResponse<>(true, templateService.upsert(problemId, language, body.get("template_code"))));
     }
 
     @DeleteMapping("/admin/problem/{problemId}/templates/{language}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> deleteTemplate(
+    public ResponseEntity<ApiResponse<Void>> deleteTemplate(
             @PathVariable String problemId,
             @PathVariable ProblemLanguage language) {
         templateService.delete(problemId, language);
-        return ResponseEntity.ok(Map.of("success", true));
+        return ResponseEntity.ok(new ApiResponse<>(true, null));
     }
 
     // ── Problem of the Day ───────────────────────────────────────────────────
 
     @GetMapping("/problem/today")
-    public ResponseEntity<Map<String, Object>> getProblemOfDay() {
+    public ResponseEntity<ApiResponse<Object>> getProblemOfDay() {
         var pod = podService.getToday().orElse(null);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("data", pod); // null allowed
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>(pod!=null, pod));
     }
 
     @PutMapping("/admin/problem/today")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> scheduleProblemOfDay(
+    public ResponseEntity<ApiResponse<Object>> scheduleProblemOfDay(
             @RequestBody Map<String, String> body) {
         LocalDate date = body.containsKey("date")
                 ? LocalDate.parse(body.get("date"))
                 : LocalDate.now();
-        return ResponseEntity.ok(Map.of("success", true,
-                "data", podService.schedule(body.get("problem_id"), date)));
+        return ResponseEntity.ok(new ApiResponse<>(true, podService.schedule(body.get("problem_id"), date)));
     }
 
     // ── Related Problems ─────────────────────────────────────────────────────
 
     @GetMapping("/problem/{slug}/related")
-    public ResponseEntity<Map<String, Object>> getRelated(
+    public ResponseEntity<ApiResponse<Object>> getRelated(
             @PathVariable String slug,
             @RequestParam(defaultValue = "5") int limit) {
         try {
-            return ResponseEntity.ok(Map.of("success", true,
-                    "data", problemArchiveService.getRelatedProblems(slug, limit)));
+            return ResponseEntity.ok(new ApiResponse<>(true, problemArchiveService.getRelatedProblems(slug, limit)));
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("success", true, "data", java.util.List.of()));
+            return ResponseEntity.ok(new ApiResponse<>(true, List.of()));
         }
     }
 }

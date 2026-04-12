@@ -67,20 +67,20 @@ public class UserController {
 
     @GetMapping(path = "me")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> getMe(Principal principal) throws ApiException {
+    public ResponseEntity<ApiResponse<UserDto>> getMe(Principal principal) throws ApiException {
         final var user = userService.getActiveUser(principal.getName());
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",user));
+        return ResponseEntity.ok(new ApiResponse<>(true, user));
     }
 
     @DeleteMapping(path = "")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> deleteMe(Principal principal) throws ApiException, IOException {
+    public ResponseEntity<ApiResponse<Void>> deleteMe(Principal principal) throws ApiException, IOException {
         final var user = userService.deleteUserById(principal.getName());
-        return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("user %s deleted successfully.",user.getUsername())));
+        return ResponseEntity.ok(new ApiResponse<>(true, null, String.format("user %s deleted successfully.", user.getUsername())));
     }
 
     @PostMapping(path = "password/init")
-    public ResponseEntity<Map<String,Object>> updatePasswordInit(HttpServletResponse httpResponse, Principal principal) throws ApiException {
+    public ResponseEntity<ApiResponse<Void>> updatePasswordInit(HttpServletResponse httpResponse, Principal principal) throws ApiException {
         final var user=userRepository.findOne(UserSpecifications.activeUserById(principal.getName(),null,null,false)).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"User not found"));
         if(user.isLocked()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account suspended");
         else if(!user.isEnabled()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account not verified");
@@ -105,12 +105,12 @@ public class UserController {
         notificationService.passwordUpdateEmail(new PasswordUpdateInit(UserModel.toDto(user),otp));
 
         //send response
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success",true,"message","check your email for otp to verify account."));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, null, "check your email for otp to verify account."));
     }
 
     @PatchMapping(path = "password/complete")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> updatePasswordComplete(@RequestBody @Valid UpdatePasswordDto updatePasswordDto, HttpServletResponse httpResponse, Principal principal) throws ApiException {
+    public ResponseEntity<ApiResponse<Void>> updatePasswordComplete(@RequestBody @Valid UpdatePasswordDto updatePasswordDto, HttpServletResponse httpResponse, Principal principal) throws ApiException {
         final List<OtpModel> latestUnUsedActiveOtps=otpRepository.findAll(OtpSpecifications.getLatestActiveOtps(principal.getName(), OtpReason.PASSWORD_UPDATE,OtpStatus.UN_USED));
         if(latestUnUsedActiveOtps.isEmpty() || !latestUnUsedActiveOtps.getFirst().getOtp().equals(updatePasswordDto.getOtp())) throw new ApiException(HttpStatus.BAD_REQUEST,"Invalid otp");
 
@@ -131,12 +131,12 @@ public class UserController {
         //security alert
         notificationService.passwordUpdateComplete(new PasswordUpdateComplete(userModel));
 
-        return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("password update for user %s successful.",userModel.getUsername())));
+        return ResponseEntity.ok(new ApiResponse<>(true, null, String.format("password update for user %s successful.", userModel.getUsername())));
     }
 
 
     @PostMapping(path = "login")//manual login
-    public ResponseEntity<Map<String,Object>> login(@RequestBody @Valid LoginRequestDto loginRequestDto, HttpServletResponse httpResponse) throws ApiException {
+    public ResponseEntity<ApiResponse<UserDto>> login(@RequestBody @Valid LoginRequestDto loginRequestDto, HttpServletResponse httpResponse) throws ApiException {
         final UserModel userModel=this.userService.findByUsernameOrEmail(loginRequestDto.getUsernameEmail(),null,false,null).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"Invalid username/Email/password"));
 
         if(userModel.isLocked()){
@@ -155,12 +155,12 @@ public class UserController {
         final var cookie=Utils.generateCookie(jwtToken, jwtExpireMs, "/",environmentService.isProd());
         httpResponse.addCookie(cookie);
 
-        return ResponseEntity.ok(Map.of("success",true,"data",UserModel.toDto(userModel),"message","login success"));
+        return ResponseEntity.ok(new ApiResponse<>(true, UserModel.toDto(userModel), "login success"));
     }
 
     @PostMapping(path = "login/google")
     @Transactional
-    public ResponseEntity<Map<String,Object>> googleLogin(@RequestBody @Valid GoogleLoginRequestDto googleLoginRequestDto, HttpServletResponse httpResponse, HttpServletRequest httpServletRequest) throws ApiException {
+    public ResponseEntity<ApiResponse<UserDto>> googleLogin(@RequestBody @Valid GoogleLoginRequestDto googleLoginRequestDto, HttpServletResponse httpResponse, HttpServletRequest httpServletRequest) throws ApiException {
         //verify token
         try{
             //picture,picture ? true = picture,email,name (full name)
@@ -181,7 +181,7 @@ public class UserController {
                 final String jwtToken=jwtService.generateJwtToken(UserModel.toDto(user),jwtExpireMs,jwtSecret);
                 final var cookie=Utils.generateCookie(jwtToken, jwtExpireMs, "/",environmentService.isProd());
                 httpResponse.addCookie(cookie);
-                return ResponseEntity.ok(Map.of("success",true,"data",UserModel.toDto(user),"message","login success"));
+                return ResponseEntity.ok(new ApiResponse<>(true, UserModel.toDto(user), "login success"));
             }
 
             final var user=UserModel.builder()
@@ -219,20 +219,20 @@ public class UserController {
                 notificationService.registrationEmail(new RegistrationVerificationEvent(savedUser,token, this.getVerificationUrl(httpServletRequest)));
 
                 //send response
-                return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success",true,"message","check your email to verify account."));
+                return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, null, "check your email to verify account."));
             }
 
             final String jwtToken=jwtService.generateJwtToken(UserModel.toDto(savedUser),jwtExpireMs,jwtSecret);
             final var cookie=Utils.generateCookie(jwtToken, jwtExpireMs, "/",environmentService.isProd());
             httpResponse.addCookie(cookie);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success",true,"data",UserModel.toDto(savedUser),"message","login success"));
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, UserModel.toDto(savedUser), "login success"));
         }catch (SignatureException e){
-            return ResponseEntity.badRequest().body(Map.of("success",false,"message","invalid/expired token."));
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, null, "invalid/expired token."));
         }
     }
 
     @GetMapping(path = "logout")
-    public ResponseEntity<Map<String,Object>> logout(HttpServletResponse httpResponse,Principal principal) throws ApiException {
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse httpResponse,Principal principal) throws ApiException {
         final var user=userRepository.findOne(UserSpecifications.activeUserById(principal.getName())).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"Failed to logout,user not found"));
 
         final Cookie cookie=new Cookie("jwt", null);
@@ -243,11 +243,11 @@ public class UserController {
         cookie.setAttribute("SameSite", "None");
         if (environmentService.isProd()) cookie.setDomain("laxmi.solutions");
         httpResponse.addCookie(cookie);
-        return ResponseEntity.ok(Map.of("success",true,"message",String.format("logout successful - %s",user.getUsername())));
+        return ResponseEntity.ok(new ApiResponse<>(true, null, String.format("logout successful - %s", user.getUsername())));
     }
 
     @PostMapping(path = "register")
-    public ResponseEntity<Map<String,Object>> register(@RequestBody() @Valid RegisterRequestDto userInfo, HttpServletRequest httpServletRequest) throws UserAlreadyExistsException, IOException, ApiException {
+    public ResponseEntity<ApiResponse<Void>> register(@RequestBody() @Valid RegisterRequestDto userInfo, HttpServletRequest httpServletRequest) throws UserAlreadyExistsException, IOException, ApiException {
         //save user
         final UserModel userModel=userService.createUser(userInfo);
 
@@ -268,7 +268,7 @@ public class UserController {
         notificationService.registrationEmail(new RegistrationVerificationEvent(userModel,token, this.getVerificationUrl(httpServletRequest)));
 
         //send response
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success",true,"message","check your email to verify account."));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, null, "check your email to verify account."));
     }
 
     private String getVerificationUrl(@NonNull HttpServletRequest httpServletRequest){
@@ -276,12 +276,12 @@ public class UserController {
     }
 
     @PostMapping(path = "re-verify")
-    public ResponseEntity<Map<String,Object>> reVerifyUser(@RequestBody() @Valid ReVerifyRequest reVerifyRequest,HttpServletRequest httpServletRequest) throws ApiException {
+    public ResponseEntity<ApiResponse<Void>> reVerifyUser(@RequestBody() @Valid ReVerifyRequest reVerifyRequest,HttpServletRequest httpServletRequest) throws ApiException {
         //if token already exists delete it... not required-> auto delete
         final UserModel userModel=this.userService.findByUsernameOrEmail(reVerifyRequest.getUsernameEmail(),null,false,null).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"User does not exists"));
 
         if(userModel.isEnabled()){
-            return ResponseEntity.ok(Map.of("success",true,"message","user already verified"));
+            return ResponseEntity.ok(new ApiResponse<>(true, null, "user already verified"));
         }else if(userModel.isLocked()) throw new ApiException(HttpStatus.BAD_REQUEST,"Account suspended");
 
         final var token=Utils.generateToken();
@@ -301,11 +301,11 @@ public class UserController {
 
         notificationService.registrationEmail(new RegistrationVerificationEvent(userModel,token,verificationUrl));
 
-        return ResponseEntity.ok(Map.of("success",true,"message","Email Sent!"));
+        return ResponseEntity.ok(new ApiResponse<>(true, null, "Email Sent!"));
     }
 
     @GetMapping(path = "verify")
-    public ResponseEntity<Map<String,Object>> verifyUser(@RequestParam(name = "token",defaultValue = "") String verificationToken) throws ApiException {
+    public ResponseEntity<ApiResponse<Void>> verifyUser(@RequestParam(name = "token",defaultValue = "") String verificationToken) throws ApiException {
         final var activeUnusedToken=verificationTokenRepository.findOne(VerificationTokenSpecifications.getActiveToken(verificationToken, TokenReason.ACCOUNT_VERIFICATION, TokenStatus.UN_USED)).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"Invalid token"));
 
         final UserModel userModel=userRepository.findById(activeUnusedToken.getUserId()).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"failed to verify, user not found."));
@@ -321,8 +321,9 @@ public class UserController {
         activeUnusedToken.setStatus(TokenStatus.USED);
         verificationTokenRepository.save(activeUnusedToken);
 
-        return ResponseEntity.ok(Map.of("success",true,"message","Verification success!"));
+        return ResponseEntity.ok(new ApiResponse<>(true, null, "Verification success!"));
     }
+
     @PostMapping(path = "jwt/verify")
     public ResponseEntity<String> verifyJwtToken(HttpServletRequest httpServletRequest) throws ApiException {
         final var token=jwtService.getTokenFromRequest(httpServletRequest);
@@ -336,7 +337,7 @@ public class UserController {
     }
 
     @PostMapping(path = "forgot-password")
-    public ResponseEntity<Map<String,Object>> forgotPassword(@RequestBody @Valid ForgotPasswordRequestDto forgotPassword, HttpServletRequest httpServletRequest) throws ApiException {
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody @Valid ForgotPasswordRequestDto forgotPassword, HttpServletRequest httpServletRequest) throws ApiException {
         //check if such user exists
         final UserModel userModel=userService.findByUsernameOrEmail(forgotPassword.getUsernameEmail(),null,false,true).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,String.format("user %s does not exists.",forgotPassword.getUsernameEmail())));
         if(userAuthProviderRepository.existsByUserId(userModel.getId())) throw new ApiException(HttpStatus.NOT_FOUND,"password for current account cannot be reset");
@@ -357,11 +358,11 @@ public class UserController {
         //send otp email
         notificationService.otpEmail(new OtpEvent(userModel.getId(),userModel.getFirstName(),userModel.getEmail(),otp));
 
-        return ResponseEntity.status(200).body(Map.of("success",true,"message","please enter the otp sent via mail!"));
+        return ResponseEntity.ok(new ApiResponse<>(true, null, "please enter the otp sent via mail!"));
     }
 
     @PostMapping(path = "reset-password")
-    public ResponseEntity<Map<String,Object>> resetPassword(@RequestBody @Valid ResetPasswordRequestDto resetPassword, HttpServletRequest httpServletRequest) throws ApiException {
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody @Valid ResetPasswordRequestDto resetPassword, HttpServletRequest httpServletRequest) throws ApiException {
         if(!resetPassword.getPassword().equals(resetPassword.getConfirmPassword())) throw new ApiException(HttpStatus.BAD_REQUEST,"password and confirm password should be same");
 
         final var user=userService.findByUsernameOrEmail(resetPassword.getUsernameEmail(),null,false,true).orElseThrow(()->new ApiException(HttpStatus.BAD_REQUEST,"User does not exists"));
@@ -388,6 +389,6 @@ public class UserController {
         //send alert email
         notificationService.alterEmail(new AlertEvent(user.getFirstName(), user.getEmail(), "you password has been changed successfully..."));
 
-        return ResponseEntity.status(200).body(Map.of("success",true,"message","password changed successfully..."));//give option if the owner doesnt changed his password
+        return ResponseEntity.ok(new ApiResponse<>(true, null, "password changed successfully..."));//give option if the owner doesnt changed his password
     }
 }

@@ -1,5 +1,6 @@
 package com.vi5hnu.codesprout.controller;
 
+import com.vi5hnu.codesprout.models.ApiResponse;
 import com.vi5hnu.codesprout.models.RoleDto;
 import com.vi5hnu.codesprout.models.UserDto;
 import com.vi5hnu.codesprout.annotation.RequireUserWith;
@@ -22,7 +23,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.Map;
 
 @RestController
 @RequestMapping(path = "api/v1/users")
@@ -42,28 +42,29 @@ public class AdminController {
 
     @GetMapping(path = "all")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> getUsers(@RequestParam(name = "pageNo",defaultValue = "1") int pageNo,@RequestParam(name = "count",defaultValue = "10") int count) throws ApiException {
+    public ResponseEntity<ApiResponse<Pageable<UserDto>>> getUsers(@RequestParam(name = "pageNo",defaultValue = "1") int pageNo,@RequestParam(name = "count",defaultValue = "10") int count) throws ApiException {
         final Pageable<UserDto> userPageDto = userService.findAllUsers(pageNo, count);
-        return ResponseEntity.ok(Map.of("success",true,"data",userPageDto));
+        return ResponseEntity.ok(new ApiResponse<>(true, userPageDto));
     }
 
     @GetMapping(path = "{userId}")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> getUser(@PathVariable(name = "userId",required = true) String userId) throws ApiException {
+    public ResponseEntity<ApiResponse<UserDto>> getUser(@PathVariable(name = "userId") String userId) throws ApiException {
         final var user = userService.getActiveUser(userId);
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",user));
+        return ResponseEntity.ok(new ApiResponse<>(true, user));
     }
+
     @DeleteMapping(path = "{userId}")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> deleteUser(@PathVariable(name = "userId",required = true) String userId) throws ApiException, IOException {
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable(name = "userId") String userId) throws ApiException, IOException {
         final var user = userService.deleteUserById(userId);
-        return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("user %s deleted successfully.",user.getUsername())));
+        return ResponseEntity.ok(new ApiResponse<>(true, null, String.format("user %s deleted successfully.", user.getUsername())));
     }
 
     @PatchMapping(path = "add-role")
     @RequireUserWith(isEnabled = true,isDeleted = false,isLocked = false)
-    public ResponseEntity<Map<String,Object>> addRole(@RequestBody @Valid RoleDto roleDto) throws ApiException {
-        UserModel userModel = userService.updateRole(roleDto.getUserId(),roleDto.getRole());
-        return ResponseEntity.status(200).body(Map.of("success",true,"message",String.format("role added for user %s", userModel.getUsername()),"data", UserModel.toDto(userModel)));
+    public ResponseEntity<ApiResponse<UserDto>> addRole(@RequestBody @Valid RoleDto roleDto) throws ApiException {
+        UserModel userModel = userService.updateRole(roleDto.getUserId(), roleDto.getRole());
+        return ResponseEntity.ok(new ApiResponse<>(true, UserModel.toDto(userModel), String.format("role added for user %s", userModel.getUsername())));
     }
 }
