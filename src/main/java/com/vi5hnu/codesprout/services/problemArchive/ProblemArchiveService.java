@@ -301,6 +301,43 @@ public class ProblemArchiveService {
         problemTagRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProblemArchiveDto> getRelatedProblems(String slug, int limit) {
+        ProblemArchive current = problemArchiveRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Problem not found: " + slug));
+
+        // Collect tag IDs for the current problem
+        List<String> tagIds = problemTagAssociationRepository.findAllByProblemId(current.getId())
+                .stream().map(ProblemTagAssociation::getTagId).toList();
+
+        if (tagIds.isEmpty()) {
+            // Fallback: same difficulty, same language
+            return problemArchiveRepository
+                    .findAll(ProblemArchiveSpecification.hasDifficulty(current.getDifficulty())
+                            .and(ProblemArchiveSpecification.hasLanguage(current.getLanguage())),
+                            PageRequest.of(0, limit + 1))
+                    .stream()
+                    .filter(p -> !p.getId().equals(current.getId()))
+                    .limit(limit)
+                    .map(p -> { try { return fromProblemArchive(p); } catch (Exception e) { throw new RuntimeException(e); } })
+                    .toList();
+        }
+
+        // Find problem IDs sharing at least one tag
+        List<String> relatedIds = problemTagAssociationRepository.findAllByTagIdIn(tagIds,
+                        PageRequest.of(0, (limit + 1) * 3))
+                .stream()
+                .map(ProblemTagAssociation::getProblemId)
+                .filter(id -> !id.equals(current.getId()))
+                .distinct()
+                .limit(limit)
+                .toList();
+
+        return problemArchiveRepository.findAllById(relatedIds).stream()
+                .map(p -> { try { return fromProblemArchive(p); } catch (Exception e) { throw new RuntimeException(e); } })
+                .toList();
+    }
+
     public void removeProblemFromTag(String tagId, String problemId) {
         problemTagAssociationRepository.deleteByTagIdAndProblemId(tagId, problemId);
     }

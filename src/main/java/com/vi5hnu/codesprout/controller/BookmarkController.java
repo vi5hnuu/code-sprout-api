@@ -1,6 +1,7 @@
 package com.vi5hnu.codesprout.controller;
 
 import com.vi5hnu.codesprout.enums.BookmarkType;
+import com.vi5hnu.codesprout.models.ApiResponse;
 import com.vi5hnu.codesprout.services.BookmarkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,15 +29,12 @@ public class BookmarkController {
      */
     @PostMapping("/bookmark/{type}/{targetId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> toggle(
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> toggle(
             @PathVariable BookmarkType type,
             @PathVariable String targetId,
             Principal principal) {
         boolean bookmarked = bookmarkService.toggle(principal.getName(), type, targetId);
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "data", Map.of("bookmarked", bookmarked)
-        ));
+        return ResponseEntity.ok(new ApiResponse<>(true, Map.of("bookmarked", bookmarked)));
     }
 
     /**
@@ -44,9 +43,9 @@ public class BookmarkController {
      */
     @GetMapping("/my/bookmarks/problems")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> myProblemBookmarks(Principal principal) {
+    public ResponseEntity<ApiResponse<Object>> myProblemBookmarks(Principal principal) {
         var bookmarks = bookmarkService.getMyProblemBookmarks(principal.getName());
-        return ResponseEntity.ok(Map.of("success", true, "data", bookmarks));
+        return ResponseEntity.ok(new ApiResponse<>(true, bookmarks));
     }
 
     /**
@@ -55,8 +54,8 @@ public class BookmarkController {
      */
     @GetMapping("/my/bookmarks/articles")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> myArticleBookmarks(Principal principal) {
+    public ResponseEntity<ApiResponse<List<Object>>> myArticleBookmarks(Principal principal) {
         // TODO: implement when article bookmark fetch is needed
-        return ResponseEntity.ok(Map.of("success", true, "data", java.util.List.of()));
+        return ResponseEntity.ok(new ApiResponse<>(true, List.of()));
     }
 }

@@ -4,6 +4,7 @@ import com.vi5hnu.codesprout.annotation.RequireUserWith;
 import com.vi5hnu.codesprout.enums.FileAccess;
 import com.vi5hnu.codesprout.enums.Visibility;
 import com.vi5hnu.codesprout.exceptions.ApiException;
+import com.vi5hnu.codesprout.models.ApiResponse;
 import com.vi5hnu.codesprout.models.CreateFileFromContentRequest;
 import com.vi5hnu.codesprout.models.CreateFileRequest;
 import com.vi5hnu.codesprout.models.CreateFolderRequest;
@@ -17,9 +18,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.security.Principal;
 import java.util.List;
-import java.util.Map;
 
 //sourceUserId -> is not passed file will be searched for admin user else from sourceUserId
 //only public files of sourceUserId are allowed to be shared
@@ -33,7 +34,7 @@ public class FileManagementController {
     private final UserService userService;
 
     @GetMapping(path = "fs-listing")
-    ResponseEntity<Map<String,Object>> getListing(
+    ResponseEntity<ApiResponse<Object>> getListing(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @RequestParam(name = "parentId",required = false) String parentId,
@@ -46,45 +47,45 @@ public class FileManagementController {
         if(onlyFiles==null) onlyFiles=false;
         final var ownerId=sourceUserId!=null ? sourceUserId:principal.getName();
         if((onlyFolders && onlyFiles) || (!onlyFolders && !onlyFiles)){
-            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getListing(ownerId,parentId,pageNo,pageSize,Visibility.PUBLIC,List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
+            return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.getListing(ownerId,parentId,pageNo,pageSize,Visibility.PUBLIC,List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
         }else if(onlyFiles){
-            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,parentId,pageNo,pageSize,null, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
+            return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.getFiles(ownerId,parentId,pageNo,pageSize,null, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
         }else{
-            return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolders(ownerId,parentId,pageNo,pageSize)));
+            return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.getFolders(ownerId,parentId,pageNo,pageSize)));
         }
     }
 
     @GetMapping(path = "folders")
-    ResponseEntity<Map<String,Object>> getFolders(
+    ResponseEntity<ApiResponse<Object>> getFolders(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @RequestParam(name = "parentId",required = false) String parentId,
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
             @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws ApiException {
         final var ownerId=validateAndGetSourceId(sourceUserId,principal.getName());
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolders(ownerId,parentId,pageNo,pageSize)));
+        return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.getFolders(ownerId,parentId,pageNo,pageSize)));
     }
 
     @GetMapping(path = "folders/{folderId}")
-    ResponseEntity<Map<String,Object>> getFolderById(
+    ResponseEntity<ApiResponse<Object>> getFolderById(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @PathVariable(name = "folderId") String folderId) throws ApiException {
         final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolderById(ownerId,folderId)));
+        return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.getFolderById(ownerId,folderId)));
     }
 
     @GetMapping(path = "folders/name/{folderName}")
-    ResponseEntity<Map<String,Object>> getFolderByName(
+    ResponseEntity<ApiResponse<Object>> getFolderByName(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @PathVariable(name = "folderName") String folderName) throws ApiException {
         final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFolderByName(ownerId,folderName)));
+        return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.getFolderByName(ownerId,folderName)));
     }
 
     @GetMapping(path = "files")
-    ResponseEntity<Map<String,Object>> getFiles(
+    ResponseEntity<ApiResponse<Object>> getFiles(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @RequestParam(name = "search",required = false) String search,
@@ -92,62 +93,62 @@ public class FileManagementController {
             @RequestParam(name = "pageNo",required = false,defaultValue = "1") int pageNo,
             @RequestParam(name = "pageSize",required = false,defaultValue = "20") int pageSize) throws Exception {
         final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFiles(ownerId,folderId,pageNo,pageSize,search, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
+        return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.getFiles(ownerId,folderId,pageNo,pageSize,search, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
     @GetMapping(path = "file-id/{fileId}")
-    ResponseEntity<Map<String,Object>> getFileById(
+    ResponseEntity<ApiResponse<Object>> getFileById(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @RequestParam(name = "folderId",required = false) String folderId,
             @PathVariable(name = "fileId") String fileId) throws Exception {
         final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileById(ownerId,folderId,fileId, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
+        return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.getFileById(ownerId,folderId,fileId, Visibility.PUBLIC, List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
     @GetMapping(path = "file/{fileName}")
-    ResponseEntity<Map<String,Object>> getFileByName(
+    ResponseEntity<ApiResponse<Object>> getFileByName(
             Principal principal,
             @RequestParam(name = "sourceUserId",required = false) String sourceUserId,
             @RequestParam(name = "folderId",required = false) String folderId,
             @PathVariable(name = "fileName") String fileName) throws Exception {
         final var ownerId=validateAndGetSourceId(sourceUserId, principal.getName());
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.getFileByName(ownerId,folderId,fileName,Visibility.PUBLIC,List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
+        return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.getFileByName(ownerId,folderId,fileName,Visibility.PUBLIC,List.of(FileAccess.FREE,FileAccess.OPEN,FileAccess.PREMIUM))));
     }
 
     @PostMapping(path = "create-folder")
     @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
-    ResponseEntity<Map<String,Object>> createFolder(Principal principal,
-                                                    @Valid  @RequestBody CreateFolderRequest folderRequest) throws Exception {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFolder(principal.getName(),folderRequest)));
+    ResponseEntity<ApiResponse<Object>> createFolder(Principal principal,
+                                                     @Valid @RequestBody CreateFolderRequest folderRequest) throws Exception {
+        return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.createFolder(principal.getName(),folderRequest)));
     }
 
     @PostMapping(path = "create-file",consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
-    ResponseEntity<Map<String,Object>> createFile(Principal principal,
-                                                  @Valid  @RequestPart("info") CreateFileRequest fileRequest,@RequestPart("file") MultipartFile file) throws Exception {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFile(principal.getName(),fileRequest,file)));
+    ResponseEntity<ApiResponse<Object>> createFile(Principal principal,
+                                                   @Valid @RequestPart("info") CreateFileRequest fileRequest,@RequestPart("file") MultipartFile file) throws Exception {
+        return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.createFile(principal.getName(),fileRequest,file)));
     }
 
     @PostMapping(path = "delete-file/{fileId}")
     @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
-    ResponseEntity<Map<String,Object>> deleteFile(Principal principal,@PathVariable("fileId") String fileId,@RequestParam("delete-permanently") Boolean permanentDelete ) throws Exception {
+    ResponseEntity<ApiResponse<Void>> deleteFile(Principal principal,@PathVariable("fileId") String fileId,@RequestParam("delete-permanently") Boolean permanentDelete) throws Exception {
         this.fileManagementService.deleteFile(principal.getName(),fileId,permanentDelete);
-        return ResponseEntity.status(200).body(Map.of("success",true,"message","file deleted successfully"));
+        return ResponseEntity.ok(new ApiResponse<>(true, null, "file deleted successfully"));
     }
 
     @PostMapping(path = "delete-folder/{folderId}")
     @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
-    ResponseEntity<Map<String,Object>> deleteFolder(Principal principal,@PathVariable("folderId") String folderId,@RequestParam("delete-permanently") Boolean permanentDelete ) throws Exception {
+    ResponseEntity<ApiResponse<Void>> deleteFolder(Principal principal,@PathVariable("folderId") String folderId,@RequestParam("delete-permanently") Boolean permanentDelete) throws Exception {
         this.fileManagementService.deleteFolder(principal.getName(),folderId,permanentDelete);
-        return ResponseEntity.status(200).body(Map.of("success",true,"message","folder deleted successfully"));
+        return ResponseEntity.ok(new ApiResponse<>(true, null, "folder deleted successfully"));
     }
 
     @PostMapping(path = "content/create-file")
     @RequireUserWith(hasRoles = {UserRole.ROLE_ADMIN})
-    ResponseEntity<Map<String,Object>> createFileFromContent(Principal principal,
-                                                             @Valid  @RequestBody CreateFileFromContentRequest fileRequest) throws Exception {
-        return ResponseEntity.status(200).body(Map.of("success",true,"data",this.fileManagementService.createFileFromContent(principal.getName(),fileRequest)));
+    ResponseEntity<ApiResponse<Object>> createFileFromContent(Principal principal,
+                                                              @Valid @RequestBody CreateFileFromContentRequest fileRequest) throws Exception {
+        return ResponseEntity.ok(new ApiResponse<>(true, this.fileManagementService.createFileFromContent(principal.getName(),fileRequest)));
     }
 
     private String validateAndGetSourceId(String sourceUserId,String currentUserId) throws ApiException {

@@ -10,4 +10,9 @@ public class ApiException extends Exception{
         super(msg);
         this.httpStatus=httpStatus;
     }
+
+    public ApiException(String msg,HttpStatus httpStatus){
+        super(msg);
+        this.httpStatus=httpStatus;
+    }
 }
