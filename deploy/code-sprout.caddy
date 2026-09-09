@@ -1,0 +1,3 @@
+# code-sprout-api — imported by /etc/caddy/Caddyfile.
+encode zstd gzip
+reverse_proxy localhost:8084

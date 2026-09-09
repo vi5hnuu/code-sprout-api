@@ -1,0 +1,41 @@
+# Homelab compose for code-sprout-api. Everything (secrets, DB URL) comes
+# from /etc/code-sprout/prod.env, which deploy/deploy.sh materialises.
+services:
+  code-sprout-service:
+    image: code-sprout-service:1.0
+    build:
+      context: .
+    env_file:
+      - /etc/code-sprout/prod.env
+    ports:
+      - "127.0.0.1:8084:9093"   # host 8084 → container 9093 (host :9093 owned by ls-judge-worker)
+    # App logs land on host at /var/log/code-sprout-api/ (bind mount);
+    # rotation config lives in LOGGING_* in prod.env.
+    volumes:
+      - /var/log/code-sprout-api:/app/logs
+    depends_on:
+      code-sprout-mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [code-sprout-network]
+
+  code-sprout-mysql:
+    image: mysql:9.1.0
+    env_file:
+      - /etc/code-sprout/prod.env
+    ports:
+      - "127.0.0.1:3308:3306"   # 3306/3307 taken by silent-whisper/chat-craft
+    volumes:
+      - /var/lib/code-sprout/mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+    networks: [code-sprout-network]
+
+networks:
+  code-sprout-network:
+    driver: bridge
